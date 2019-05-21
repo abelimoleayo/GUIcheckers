@@ -1,11 +1,13 @@
 import java.util.*;
+import java.awt.*;
 
 public class HumanPlayer extends Player {
 
     private int m_selected_source;
 
-    public HumanPlayer(String name, int board_label, boolean reflect) {
-        super(name, board_label, reflect);
+    public HumanPlayer(String name, int board_label, boolean reflect, Color piece_color, 
+                       Color crown_color) {
+        super(name, board_label, reflect, piece_color, crown_color);
     }
     
     @Override
@@ -20,7 +22,7 @@ public class HumanPlayer extends Player {
             for (Integer key : keys) {
                 options[idx++] = key.toString();
             }
-            m_selected_source = Integer.parseInt(UtilityFuncs.getUserChoice(options, options));
+            m_selected_source = 0;//Integer.parseInt(UtilityFuncs.getUserChoice(options, options));
             return m_selected_source;
         } else {
             Set<String> path_options = moveable_pieces_pos.get(m_selected_source);
@@ -32,7 +34,7 @@ public class HumanPlayer extends Player {
                 options[idx++] = str_path[str_path.length - 1];
             }
 
-            return Integer.parseInt(UtilityFuncs.getUserChoice(options, options));
+            return 0;//Integer.parseInt(UtilityFuncs.getUserChoice(options, options));
         }
 
         

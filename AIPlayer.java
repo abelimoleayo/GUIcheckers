@@ -1,4 +1,5 @@
 import java.util.*;
+import java.awt.*;
 
 public class AIPlayer extends Player {
 
@@ -6,12 +7,13 @@ public class AIPlayer extends Player {
 
     // TODO: add field to store difficulty level
 
-    public AIPlayer(String name, int board_label, boolean reflect) {
-        super(name, board_label, reflect);
+    public AIPlayer(String name, int board_label, boolean reflect, Color piece_color, 
+                    Color crown_color) {
+        super(name, board_label, reflect, piece_color, crown_color);
     }
 
-    public AIPlayer(int board_label, boolean reflect) {
-        super("Default_AI_name", board_label, reflect);
+    public AIPlayer(int board_label, boolean reflect, Color piece_color, Color crown_color) {
+        super("Default_AI_name", board_label, reflect, piece_color, crown_color);
     }
 
     @Override

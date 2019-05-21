@@ -1,6 +1,11 @@
 import java.util.*;
+import java.awt.Graphics;
+//import BoardCell.CellState;     
 
 public class Game {
+    private static enum GameState {
+        WAITING_FOR_SOURCE, WAITING_FOR_DESTINATION, ANIMATING, GAME_OVER;
+    }
 
     public static final String s_capture_delim = "=";
     public static final String s_moves_delim = ":";
@@ -8,6 +13,16 @@ public class Game {
     private Player[] m_players;
     private int m_board_size, m_pieces_per_player;
     private int[][] m_board;
+    private Map<Integer,BoardCell> m_board_cells;
+    private int m_curr_player_index;
+    private GameState m_game_state;
+    private Map<Integer,Set<String>> m_movable_pieces;
+    private BoardCell m_invalid_cell;
+    private Set<BoardCell> m_painted_cells;
+    private Set<Integer> m_destinations;
+    private Integer m_player_source, m_player_destination;
+    private String m_selected_move;
+    private Map<Integer,Set<Integer>> m_pos_on_path;
 
     // add boolean array of paramters as third argument
     public Game(int board_size, Player[] players)   {
@@ -18,38 +33,43 @@ public class Game {
         
         m_pieces_per_player = (m_board_size/2) * (m_board_size - 2)/2;
         
-        int p1_row, p1_col, player_POV_index, p2_global_index;
+        int p1_row, p1_col, p2_row, p2_col, player_POV_index, p2_global_index;
         int p1_label = m_players[0].m_int_label;
         int p2_label = m_players[1].m_int_label;
+        int cell_width = Checkers.getBoardCellWidth();
+        m_board_cells = new HashMap<Integer,BoardCell>();
         for (int i=0; i<(2*m_pieces_per_player); i=i+2) {
             p1_row = i/m_board_size;
             p1_col = (p1_row%2 == 0) ? (i%m_board_size) : (i%m_board_size) + 1;
             player_POV_index = p1_row*m_board_size + p1_col;
-            
+            m_board_cells.put(player_POV_index, new BoardCell(player_POV_index));
             m_board[p1_row][p1_col] = p1_label;
-            m_players[0].addPiece(new Piece(player_POV_index));
+            m_players[0].addPiece(new Piece(player_POV_index, m_players[0]));
 
             p2_global_index = reflectPosition(player_POV_index, m_board_size);
-            m_board[p2_global_index/m_board_size][p2_global_index%m_board_size] = p2_label;
-            m_players[1].addPiece(new Piece(player_POV_index));
+            p2_row = p2_global_index/m_board_size;
+            p2_col = p2_global_index%m_board_size;
+            m_board_cells.put(p2_global_index, new BoardCell(p2_global_index));
+            m_board[p2_row][p2_col] = p2_label;
+            m_players[1].addPiece(new Piece(player_POV_index, m_players[1]));
         }
 
-        // int p1_label = m_players[0].m_int_label;
-        // int p2_label = m_players[1].m_int_label;
-        // Piece p = new Piece(9); p.makeKing();
-        // m_board[1][1] = p1_label; m_players[0].addPiece(p);
-        // m_board[1][3] = p2_label; m_players[1].addPiece(new Piece(reflectPosition(11,8)));
-        // m_board[1][5] = p2_label; m_players[1].addPiece(new Piece(reflectPosition(13,8)));
-        // m_board[4][4] = p2_label; m_players[1].addPiece(new Piece(reflectPosition(36,8)));
-        // m_board[4][6] = p2_label; m_players[1].addPiece(new Piece(reflectPosition(38,8)));
+        m_painted_cells = new HashSet<BoardCell>();
+        m_destinations = new HashSet<Integer>();
+        m_pos_on_path = new HashMap<Integer,Set<Integer>>();
 
-
-        printBoard(m_board, m_board_size);
+        // call function to highlight moveable pieces
+        getMovablePieces(m_players[m_curr_player_index % 2]);
+        m_game_state = GameState.WAITING_FOR_SOURCE;
     }
 
     // convert position in player POV to global position
-    private static int reflectPosition(int pos, int board_size) {
+    public static int reflectPosition(int pos, int board_size) {
         return (board_size*board_size) - pos - 1;
+    }
+
+    public static int reflectPosition(int pos) {
+        return reflectPosition(pos, Checkers.getGameBoardSize());
     }
 
     private static int opponentLabel(Player player, Player[] players_array) {
@@ -88,15 +108,15 @@ public class Game {
         return captures;
     }
 
-    private static void printBoard(int[][] board, int board_size) {
-        //System.out.println(" ");
-        for (int i=board_size-1; i>=0; i--) {
-            for (int j=0; j<board_size; j++) {
-                System.out.print(board[i][j] + "\t");
-            }
-            System.out.println(" ");
-        }
-    }
+    // private static void printBoard(int[][] board, int board_size) {
+    //     //System.out.println(" ");
+    //     for (int i=board_size-1; i>=0; i--) {
+    //         for (int j=0; j<board_size; j++) {
+    //             System.out.print(board[i][j] + "\t");
+    //         }
+    //         System.out.println(" ");
+    //     }
+    // }
 
     private Set<Integer> getJumpChildren(int pos, boolean isKing, Integer parent, 
                                          Set<Integer> ancestors, Set<Integer> victims, 
@@ -276,7 +296,7 @@ public class Game {
         return paths.substring(0, paths.length()-1);
     }
 
-    private Map<Integer,Set<String>> getMovablePieces(Player player) {
+    private void getMovablePieces(Player player) {
         Map<Integer,Set<String>> jump_positions = new HashMap<Integer,Set<String>>();
         Map<Integer,Set<String>> move_positions = new HashMap<Integer,Set<String>>();
         String jump_paths, move_paths;
@@ -309,58 +329,69 @@ public class Game {
         }
 
         if (jump_found) {
-            return jump_positions;
+            m_movable_pieces = jump_positions;
         } else {
-            return move_positions;
+            m_movable_pieces = move_positions;
+        }
+
+        if (m_movable_pieces.size() == 0) {
+            clearPlayersPieces();
+            // TODO: winner is update curr_player_index;
+            m_game_state = GameState.GAME_OVER;
+        }
+
+        for (Integer pos : m_movable_pieces.keySet()) {
+            int global_pos = player.m_reflect_pos ? reflectPosition(pos, m_board_size) : pos;
+            m_board_cells.get(global_pos).setCellState(BoardCell.CellState.VALID_SOURCE, player);
         }
     } 
 
-    private String getPlayerMove(Player player, Map<Integer,Set<String>> possible_moves) {
-        boolean source_selected = false;
-        boolean move_complete = false;
-        int player_choice;
-        int player_source = 0;
-        String chosen_path = "";
+    // private String getPlayerMove(Player player, Map<Integer,Set<String>> possible_moves) {
+    //     boolean source_selected = false;
+    //     boolean move_complete = false;
+    //     int player_choice;
+    //     int player_source = 0;
+    //     String chosen_path = "";
 
-        // TODO: use possible_moves.keySet() to highlight background of all possible source
-        while (!move_complete) {
-            if (!source_selected) {
-                System.out.print("Select source: ");
-                player_choice = player.getMove(possible_moves, m_board, source_selected);
-                if (possible_moves.containsKey(player_choice)) {
-                    source_selected = true;
-                    player_source = player_choice;
-                    // TODO: highlight selected souce here
-                } else {
-                    System.out.println("Invalid source");
-                }
-            } else {
-                System.out.print("Source selected, now select move: ");
-                player_choice = player.getMove(possible_moves, m_board, source_selected);
-                for (String path : possible_moves.get(player_source)) {
-                    String[] split_path = path.split(s_move_path_delim);
-                    if (player_choice == Integer.parseInt(split_path[split_path.length - 1])) {
-                        chosen_path = path;
-                        move_complete = true;
-                        break;
-                    }
-                }
-                if (!move_complete) {
-                    if (possible_moves.containsKey(player_choice)) {
-                        player_source = player_choice;
-                        // TODO: remove previous source highlight, highlight new selected souce here
-                    } else {
-                        System.out.println("Invalid move.");
-                    }
-                }
-            }
-        }
+    //     // TODO: use possible_moves.keySet() to highlight background of all possible source
+    //     while (!move_complete) {
+    //         if (!source_selected) {
+    //             System.out.print("Select source: ");
+    //             player_choice = player.getMove(possible_moves, m_board, source_selected);
+    //             if (possible_moves.containsKey(player_choice)) {
+    //                 source_selected = true;
+    //                 player_source = player_choice;
+    //                 // TODO: highlight selected souce here
+    //             } else {
+    //                 System.out.println("Invalid source");
+    //             }
+    //         } else {
+    //             System.out.print("Source selected, now select move: ");
+    //             player_choice = player.getMove(possible_moves, m_board, source_selected);
+    //             for (String path : possible_moves.get(player_source)) {
+    //                 String[] split_path = path.split(s_move_path_delim);
+    //                 if (player_choice == Integer.parseInt(split_path[split_path.length - 1])) {
+    //                     chosen_path = path;
+    //                     move_complete = true;
+    //                     break;
+    //                 }
+    //             }
+    //             if (!move_complete) {
+    //                 if (possible_moves.containsKey(player_choice)) {
+    //                     player_source = player_choice;
+    //                     // TODO remove previous source highlight, highlight new selected souce here
+    //                 } else {
+    //                     System.out.println("Invalid move.");
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        return player_source + s_moves_delim + chosen_path;
-    }
+    //     return player_source + s_moves_delim + chosen_path;
+    // }
 
     private void updateBoard(Player player, String move) {
-        /* Thankful for this rule: https://www.itsyourturn.com/t_helptopic2130.html#helpitem1329 */
+        /* Thankful for this rule: https://www.itsyourturn.com/t_helptopic2130.html#helpitem1329*/
         boolean is_jump = move.contains(s_capture_delim);
         String[] move_sections = move.split(s_moves_delim);
         int source_pos = Integer.parseInt(move_sections[0]);
@@ -408,53 +439,243 @@ public class Game {
         }
     }
 
-    public int play() {
-        // return 0 if p1 won, 
-        // return 1 if p2 won
-        // return -1 if game terminated or other weird thing happens
-        
-        int idx = 0;
-        Player curr_player;
-        Map<Integer,Set<String>> movable_pieces;
-        String curr_player_move;
-        while (true) {
-            curr_player = m_players[idx++ % 2];
-            movable_pieces = getMovablePieces(curr_player);
-            if (movable_pieces.size() == 0) {
-                // this player lost, next player is winner
-                clearPlayersPieces();
-                System.out.println("\n\n");
-                printBoard(m_board, m_board_size);
-                return idx%2;
-            }
-            System.out.println("Moveable pieces");
-            for (Integer i : movable_pieces.keySet()) {
-                System.out.print("\t" + i + ": ");
-                for (String s : movable_pieces.get(i)) {
-                    System.out.print(s + ", ");
-                }
-                System.out.println(" ");
-            }
-            // TODO: highlight all possible moveable spots
-
-            curr_player_move = getPlayerMove(curr_player, movable_pieces);
-            updateBoard(curr_player, curr_player_move);
-            printBoard(m_board, m_board_size);
-
-            //break;
-            // if (idx == 4) {
-            //     Random r = new Random();
-            //     return UtilityFuncs.r.nextInt(3) - 1;
-            // }
+    public void draw(Graphics g) {
+        for (BoardCell cell : m_board_cells.values()) {
+            cell.draw(g);
         }
-
-        // compute pieces that can move (captures take priority) and highlight them
-            // if none, player loses (return appropriate integer)
-        // get user piece choice
-        // highlight possible movements of user piece choice
-        // get user destination choice
-        // animate (if needed)
-        // update m_board and player's piece position
-        // use user's choice to update game (animation may or may not happen here)
+        for (Player p : m_players) {
+            p.draw(g);
+        }
     }
+
+    private void waitingForSourceHandler(int pos, int global_pos, Player player) {
+        BoardCell selected_cell = m_board_cells.get(global_pos);
+        if (m_movable_pieces.keySet().contains(pos)) {
+            // reset prior invalid selection if any
+            if (m_invalid_cell != null) {
+                m_invalid_cell.setCellState(BoardCell.CellState.DEFAULT, player);
+                m_invalid_cell = null;
+            }
+            // reset all prior painted cells if any
+            for (BoardCell cell : m_painted_cells) {
+                cell.setCellState(BoardCell.CellState.DEFAULT, player);
+                m_painted_cells.remove(cell);
+            }
+            // reset all valid sources in-case they were selected before
+            for (Integer source_pos : m_movable_pieces.keySet()) {
+                int global_source_pos = player.m_reflect_pos ? 
+                                        reflectPosition(source_pos, m_board_size) : source_pos;
+                m_board_cells.get(global_source_pos).setCellState(BoardCell.CellState.VALID_SOURCE,
+                                                                  player);
+            }
+            // set state of selected cell
+            selected_cell.setCellState(BoardCell.CellState.SELECTED_SOURCE, player);
+            m_painted_cells.add(selected_cell);
+            // get the moveable paths from source
+            Set<String> moves = m_movable_pieces.get(pos);
+            // set cell state of on_path cells, add them to m_painted cells
+            boolean is_jump = moves.iterator().next().contains(s_capture_delim);
+            if (is_jump) {
+                for (String move : moves) {
+                    String[] stops = move.split(s_capture_delim + "|" + s_move_path_delim);
+                    int stop_pos = Integer.parseInt(stops[stops.length - 1]);
+                    m_pos_on_path.put(stop_pos, new HashSet<Integer>());
+                    m_pos_on_path.get(stop_pos).add(stop_pos);
+                    for (int i=0; i<stops.length-2; i=i+2) {
+                        int start = Integer.parseInt(stops[i]);
+                        int end = Integer.parseInt(stops[i+2]);
+                        if (i == stops.length-3) end = Integer.parseInt(stops[i+1]);
+                        int start_row = start/m_board_size, start_col = start%m_board_size;
+                        int end_row = end/m_board_size, end_col = end%m_board_size;
+                        int d_row = (end_row > start_row) ? 1 : -1;
+                        int d_col = (end_col > start_col) ? 1 : -1;
+                        int row = start_row, col = start_col;
+                        m_pos_on_path.get(stop_pos).add(start);
+                        int curr_pos, curr_global_pos;
+                        BoardCell curr_board_cell;
+                        do {
+                            row += d_row;
+                            col += d_col;   
+                            curr_pos = row*m_board_size + col;
+                            m_pos_on_path.get(stop_pos).add(curr_pos);
+                            curr_global_pos = player.m_reflect_pos ? 
+                                                    reflectPosition(curr_pos, m_board_size) : curr_pos;
+                            curr_board_cell = m_board_cells.get(curr_global_pos);
+                            curr_board_cell.setCellState(BoardCell.CellState.ON_PATH, player);
+                            m_painted_cells.add(curr_board_cell);
+                        } while (row != end_row || col != end_col);
+                    }
+                }
+            }
+            // set cell state of possible landing cells
+            for (String move : moves) {
+                String[] stops = move.split(s_move_path_delim);
+                int stop_pos = Integer.parseInt(stops[stops.length - 1]);
+                int stop_global_pos = player.m_reflect_pos ? reflectPosition(stop_pos, m_board_size) : 
+                                                             stop_pos;
+                BoardCell stop_cell = m_board_cells.get(stop_global_pos);
+                stop_cell.setCellState(BoardCell.CellState.DESTINATION, player);
+                if ((stop_pos/m_board_size == m_board_size - 1) && (!player.pieceAtPos(pos).isKing())) {
+                    stop_cell.setCellState(BoardCell.CellState.KING_DESTINATION, player);
+                }
+                m_painted_cells.add(stop_cell);
+                m_destinations.add(stop_pos);
+            }
+            m_player_source = pos;
+            m_game_state = GameState.WAITING_FOR_DESTINATION;
+        } else {
+            if (player.pieceAtPos(pos) != null) { // only highlight cell containing a piece
+                if (m_invalid_cell != null) m_invalid_cell.setCellState(BoardCell.CellState.DEFAULT, player);
+                m_invalid_cell = selected_cell;
+                m_invalid_cell.setCellState(BoardCell.CellState.INVALID_SELECTION, player);
+            }
+        }  
+    }
+
+    private void waitingForDestinationHandler(int pos, int global_pos, Player player) {
+        if (m_destinations.contains(pos)) {
+            for (String path : m_movable_pieces.get(m_player_source)) {
+                String[] split_path = path.split(s_move_path_delim);
+                if (pos == Integer.parseInt(split_path[split_path.length - 1])) {
+                    m_player_destination = pos;
+                    // reset source cells that arent the current one
+                    for (Integer source_pos : m_movable_pieces.keySet()) {
+                        if (source_pos != m_player_source) {
+                            int global_source_pos = player.m_reflect_pos ? 
+                                                    reflectPosition(source_pos, m_board_size) : source_pos;
+                            m_board_cells.get(global_source_pos).setCellState(BoardCell.CellState.DEFAULT,
+                                                                              player);
+                        }
+                    }
+                    // reset state
+                    //global_source_pos = player.m_reflect_pos ? 
+                    //                    reflectPosition(m_player_source, m_board_size) : m_player_source;
+                    //m_board_cells.get(global_source_pos).setCellState(BoardCell.CellState.ON_ANIMATION_PATH);
+                    
+                    // reset all cells not on chosen path and set_state of chosen path cells
+                    for (BoardCell cell : m_painted_cells) {
+                        int cell_global_pos = cell.getGlobalPos();
+                        int cell_pos = player.m_reflect_pos ? 
+                                            reflectPosition(cell_global_pos, m_board_size) : cell_global_pos;
+                        if (m_pos_on_path.get(pos).contains(cell_pos)) {
+                            cell.setCellState(BoardCell.CellState.ON_ANIMATION_PATH, player);
+                        } else {
+                            cell.setCellState(BoardCell.CellState.DEFAULT, player);
+                        }
+                    }                    
+                    //m_player_source = null; // NOPE
+                    m_painted_cells = new HashSet<BoardCell>();
+                    m_destinations = new HashSet<Integer>();
+                    m_pos_on_path = new HashMap<Integer,Set<Integer>>();
+                    m_selected_move = m_player_source + s_moves_delim + path;
+                    // update board 
+                    updateBoard(player, m_selected_move);
+                    m_game_state = GameState.ANIMATING;
+                    break;
+                }
+            }
+        } else if (m_movable_pieces.keySet().contains(pos)) {
+            for (BoardCell cell : m_painted_cells) {
+                int cell_global_pos = cell.getGlobalPos();
+                int cell_pos = player.m_reflect_pos ? reflectPosition(cell_global_pos, m_board_size) : 
+                                                      cell_global_pos;
+                if (!m_movable_pieces.keySet().contains(cell_pos)) {
+                    cell.setCellState(BoardCell.CellState.DEFAULT, player);
+                }
+            }
+            m_painted_cells = new HashSet<BoardCell>();
+            m_destinations = new HashSet<Integer>();
+            m_pos_on_path = new HashMap<Integer,Set<Integer>>();
+            waitingForSourceHandler(pos, global_pos, player);
+        } else {
+            // what happens if input is wrong cell
+            if (player.pieceAtPos(pos) != null && !m_painted_cells.contains(m_board_cells.get(pos))) {
+                if (m_invalid_cell != null) m_invalid_cell.setCellState(BoardCell.CellState.DEFAULT, player);
+                m_invalid_cell = m_board_cells.get(global_pos);
+                m_invalid_cell.setCellState(BoardCell.CellState.INVALID_SELECTION, player);
+                // Referesh, set state to waiting for source
+                for (BoardCell cell : m_painted_cells) {
+                    int cell_global_pos = cell.getGlobalPos();
+                    int cell_pos = player.m_reflect_pos ? reflectPosition(cell_global_pos, m_board_size) : 
+                                                          cell_global_pos;
+                    if (!m_movable_pieces.keySet().contains(cell_pos)) {
+                        cell.setCellState(BoardCell.CellState.DEFAULT, player);
+                    }
+                }
+                m_painted_cells = new HashSet<BoardCell>();
+                m_destinations = new HashSet<Integer>();
+                m_pos_on_path = new HashMap<Integer,Set<Integer>>();
+                m_game_state = GameState.WAITING_FOR_SOURCE;
+            }
+        }
+    }
+
+    public void processMousePress(int row, int col) {
+        Player curr_player = m_players[m_curr_player_index % 2];
+        int global_pos = m_board_size*row + col;
+        int pos = curr_player.m_reflect_pos ? reflectPosition(global_pos, m_board_size) : global_pos;
+        switch (m_game_state) {
+            case WAITING_FOR_SOURCE:
+                waitingForSourceHandler(pos, global_pos, curr_player);
+                break;
+            case WAITING_FOR_DESTINATION:
+                waitingForDestinationHandler(pos, global_pos, curr_player);
+                break;
+            // case ANIMATING: // MOVE TO DRAW
+            //     if (!m_players[m_curr_player_index % 2].animating()) {
+            //         // update curr_player_index and call set m_movable_pieces 
+            //         m_game_state = GameState.WAITING_FOR_SOURCE;
+            //     }
+            //     break;
+        }
+    }
+
+    // public int play() {
+    //     // return 0 if p1 won, 
+    //     // return 1 if p2 won
+    //     // return -1 if game terminated or other weird thing happens
+        
+    //     Player curr_player  = m_players[m_curr_player_index % 2];
+    //     //Map<Integer,Set<String>> movable_pieces = getMovablePieces(curr_player);
+    //     int idx = 0;
+    //     if (m_movable_pieces.size() == 0) {
+    //         // this player lost, next player is winner
+    //         clearPlayersPieces();
+    //         System.out.println("\n\n");
+    //         printBoard(m_board, m_board_size);
+    //         return idx%2;
+    //     }
+    //     String curr_player_move;
+    //     while (true) {
+    //         curr_player = m_players[idx++ % 2];
+    //         //movable_pieces = getMovablePieces(curr_player);
+    //         if (m_movable_pieces.size() == 0) {
+    //             // this player lost, next player is winner
+    //             clearPlayersPieces();
+    //             System.out.println("\n\n");
+    //             printBoard(m_board, m_board_size);
+    //             return idx%2;
+    //         }
+    //         // System.out.println("Moveable pieces");
+    //         // for (Integer i : movable_pieces.keySet()) {
+    //         //     System.out.print("\t" + i + ": ");
+    //         //     for (String s : movable_pieces.get(i)) {
+    //         //         System.out.print(s + ", ");
+    //         //     }
+    //         //     System.out.println(" ");
+    //         // }
+    //         //curr_player_move = getPlayerMove(curr_player, m_movable_pieces);
+    //         //updateBoard(curr_player, curr_player_move);
+    //         //printBoard(m_board, m_board_size);
+    //     }
+
+    //     // compute pieces that can move (captures take priority) and highlight them
+    //         // if none, player loses (return appropriate integer)
+    //     // get user piece choice
+    //     // highlight possible movements of user piece choice
+    //     // get user destination choice
+    //     // animate (if needed)
+    //     // update m_board and player's piece position
+    //     // use user's choice to update game (animation may or may not happen here)
+    // }
 }
