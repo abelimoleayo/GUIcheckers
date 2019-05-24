@@ -10,7 +10,7 @@ public class Piece {
     private int[] m_global_coords, m_last_stop_coords;
     private int[][] m_stop_coords;
     private double m_curr_x, m_curr_y;
-	private boolean m_isKing, m_isMoving, m_isCaptured;
+	private boolean m_to_make_king, m_isKing, m_isMoving, m_isCaptured;
 
 	public Piece(int pos, Player owner) {
         m_ID = s_ID_tracker++;
@@ -57,7 +57,7 @@ public class Piece {
     }
 
     public void makeKing() {
-        m_isKing = true;
+        m_to_make_king = true;
     }
 
     // get position of piece on board	
@@ -112,6 +112,9 @@ public class Piece {
                     center_coords = m_stop_coords[m_jump_stop_index];
                     m_animation_step = 0;
                     if (m_jump_stop_index >= m_stop_coords.length - 1) {
+                        if (!m_isKing && m_to_make_king) {
+                            m_isKing = true;
+                        }
                         m_isMoving = false;
                         m_jump_stop_index = 0;
                     } else {

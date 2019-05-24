@@ -14,7 +14,7 @@ public class Game {
     private int m_board_size, m_pieces_per_player;
     private int[][] m_board;
     private Map<Integer,BoardCell> m_board_cells;
-    private int m_curr_player_index;
+    private int m_curr_player_index, m_winner_index;
     private GameState m_game_state;
     private Map<Integer,Set<String>> m_movable_pieces;
     private BoardCell m_invalid_cell;
@@ -69,6 +69,14 @@ public class Game {
         // call function to highlight moveable pieces
         getMovablePieces(m_players[m_curr_player_index % 2]);
         m_game_state = GameState.WAITING_FOR_SOURCE;
+    }
+
+    public GameState getGameState() {
+        return m_game_state;
+    }
+
+    public int getWinnerIndex() {
+        return m_winner_index;
     }
 
     // convert position in player POV to global position
@@ -194,6 +202,43 @@ public class Game {
         return children;
     }
 
+    private Set<Integer> removeChildessChildrenInEachDirection(Set<Integer> all_children, 
+                                                               Map<Integer,String> children_paths,
+                                                               Integer parent) {
+        Set<Integer> valid_children = new HashSet<Integer>();
+
+        int parent_row = parent/m_board_size;
+        int parent_col = parent%m_board_size;
+        int[] delta_row = {-1, 1};
+        int[] delta_col = {-1, 1};
+        for (int d_row : delta_row) {
+            for (int d_col : delta_col) {
+                Set<Integer> children_in_direction = new HashSet<Integer>();
+                for (Integer child : all_children) {
+                    int child_row = child/m_board_size;
+                    int child_col = child%m_board_size;
+                    int child_parent_d_row = (child_row > parent_row) ? 1 : -1;
+                    int child_parent_d_col = (child_col > parent_col) ? 1 : -1;
+                    if ((d_row == child_parent_d_row) && (d_col == child_parent_d_col)) {
+                        children_in_direction.add(child);
+                    }
+                }
+                Set<Integer> children_in_direction_with_captures = new HashSet<Integer>();
+                for (Integer child : children_in_direction) {
+                    if (children_paths.get(child).contains(s_capture_delim)) {
+                        children_in_direction_with_captures.add(child);
+                    }
+                }
+                if (children_in_direction_with_captures.size() > 0) {
+                    children_in_direction = children_in_direction_with_captures;
+                }
+                valid_children.addAll(children_in_direction);
+            }
+        }
+
+        return valid_children;
+    }
+
     private String computePossibleJumpPaths(int pos, boolean isKing, Integer parent, 
                                             Set<Integer> ancestors, Set<Integer> victims, 
                                             Player player, int opponent_label) {
@@ -222,14 +267,18 @@ public class Game {
                                                                   childs_vicitim_copy, player, 
                                                                   opponent_label));
             }
-            Set<Integer> jump_children_with_captures = new HashSet<Integer>();
-            for (Integer child : jump_children) {
-                if (children_paths.get(child).contains(s_capture_delim)) {
-                    jump_children_with_captures.add(child);
-                }
-            }
-            if (jump_children_with_captures.size() > 0) {
-                jump_children = jump_children_with_captures;
+            // Set<Integer> jump_children_with_captures = new HashSet<Integer>();
+            // for (Integer child : jump_children) {
+            //     if (children_paths.get(child).contains(s_capture_delim)) {
+            //         jump_children_with_captures.add(child);
+            //     }
+            // }
+            // if (jump_children_with_captures.size() > 0) {
+            //     jump_children = jump_children_with_captures;
+            // }
+            
+            if (isKing) {
+                jump_children = removeChildessChildrenInEachDirection(jump_children, children_paths, pos);
             }
 
             String paths = "";
@@ -301,12 +350,10 @@ public class Game {
         boolean jump_found = false;
 
         for (int pos : player.getPiecePositions()) {
-            //System.out.println("Pos: " + pos);
             // check for jump, is so, set jumpFOund
             jump_paths = computePossibleJumpPaths(pos, player.pieceAtPos(pos).isKing(), null, 
                                                   new HashSet<Integer>(), new HashSet<Integer>(), 
                                                   player, opponentLabel(player, m_players));
-            //System.out.println("Jump paths: " + jump_paths);
             if ((jump_paths != null) && (!jump_paths.isEmpty())) {
                 jump_positions.put(pos, new HashSet<String>());
                 for (String path : jump_paths.split(s_moves_delim)) {
@@ -334,15 +381,31 @@ public class Game {
 
         if (m_movable_pieces.size() == 0) {
             clearPlayersPieces();
-            // TODO: winner is update curr_player_index;
+            m_winner_index = (m_curr_player_index + 1) % 2;
             m_game_state = GameState.GAME_OVER;
-        }
-
-        for (Integer pos : m_movable_pieces.keySet()) {
-            int global_pos = player.m_reflect_pos ? reflectPosition(pos, m_board_size) : pos;
-            m_board_cells.get(global_pos).setCellState(BoardCell.CellState.VALID_SOURCE, player);
+        } else {
+            if (player.m_type == Player.PlayerType.AI) {
+                AIMoveHandler(player);
+            } else {
+                for (Integer pos : m_movable_pieces.keySet()) {
+                    int global_pos = player.m_reflect_pos ? reflectPosition(pos, m_board_size) : pos;
+                    m_board_cells.get(global_pos).setCellState(BoardCell.CellState.VALID_SOURCE, player);
+                }
+            }
         }
     } 
+
+    private void AIMoveHandler(Player player) {
+        int source_pos = ((AIPlayer) player).getMove(m_movable_pieces, m_board, false);
+        int dest_pos = ((AIPlayer) player).getMove(m_movable_pieces, m_board, true);
+        for (String path : m_movable_pieces.get(source_pos)) {
+            String[] split_path = path.split(s_move_path_delim);
+            if (dest_pos == Integer.parseInt(split_path[split_path.length - 1])) {
+                updateBoard(player, source_pos + s_moves_delim + path);
+                m_game_state = GameState.ANIMATING;
+            }
+        }
+    }
 
     private void updateBoard(Player player, String move) {
         /* Thankful for this rule: https://www.itsyourturn.com/t_helptopic2130.html#helpitem1329*/
@@ -399,16 +462,14 @@ public class Game {
     }
 
     public void draw(Graphics g) {
-        // check if animation is done, and call handler
         if (m_game_state == GameState.ANIMATING) {
             animationHandler();
         } 
         for (BoardCell cell : m_board_cells.values()) {
             cell.draw(g);
         }
-        for (Player p : m_players) {
-            p.draw(g);
-        }
+        m_players[(m_curr_player_index + 1)%2].draw(g);
+        m_players[m_curr_player_index%2].draw(g);
     }
 
     private void waitingForSourceHandler(int pos, int global_pos, Player player) {
@@ -612,8 +673,8 @@ public class Game {
             }
             m_animation_cells = new HashSet<BoardCell>();
             m_curr_player_index++;
-            getMovablePieces(m_players[m_curr_player_index % 2]);
             m_game_state = GameState.WAITING_FOR_SOURCE;
+            getMovablePieces(m_players[m_curr_player_index % 2]);
         }
     }
 

@@ -3,10 +3,11 @@ import java.awt.*;
 
 public abstract class Player {
 
+    public static enum PlayerType {
+        HUMAN, AI;
+    }
+
     // POSITIONS ARE IN PLAYER POV!!!
-
-    // TODO?: add static variable to check that constructor board_label doesn't already exist 
-
     private String m_name;
     private int m_num_pieces;
     private Set<Piece> m_pieces;
@@ -15,9 +16,10 @@ public abstract class Player {
     public final boolean m_reflect_pos;
     public final Color m_piece_color;
     public final Color m_crown_color;
+    public final PlayerType m_type;
 
     public Player(String name, int board_label, boolean reflect, Color piece_color, 
-                  Color crown_color) {
+                  Color crown_color, PlayerType type) {
         m_name = name;
         m_int_label = board_label;
         m_reflect_pos = reflect;
@@ -26,6 +28,7 @@ public abstract class Player {
         m_crown_color = crown_color;
         m_pieces = new HashSet<Piece>();
         m_animating_captured_pieces = new HashSet<Piece>();
+        m_type = type;
     }
 
     public String getName() {
@@ -82,16 +85,16 @@ public abstract class Player {
         for (Piece piece : m_pieces) {
             piece.draw(g);
         }
+        Set<Piece> to_remove = new HashSet<Piece>();
         for (Piece piece : m_animating_captured_pieces) {
             if (piece.isMoving()) {
                 piece.draw(g);
             } else {
-                m_animating_captured_pieces.remove(piece);
+                to_remove.add(piece);
             }
         }
+        for (Piece piece : to_remove) {
+            m_animating_captured_pieces.remove(piece);
+        }
     }
-
-    public abstract int getMove(Map<Integer,Set<String>> moveable_pieces_pos, int[][] game_board, 
-                                boolean source_selected);
-
 }

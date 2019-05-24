@@ -16,12 +16,11 @@ public class Checkers extends JPanel {
     private static Timer s_timer;
     private static JFrame s_window;
     private static final Color s_background_color = Color.WHITE;
-    private static boolean s_game_mode_selected;
+    private static boolean s_game_mode_selected, s_waiting;
     private static int s_window_size = 720;
     private static int s_board_cell_width;
     private static int s_board_piece_width;
     private static int s_game_board_size;
-    private static boolean s_wait;
     private static boolean s_game_ongoing;
     public static final int s_animation_steps = 20;
 
@@ -64,26 +63,21 @@ public class Checkers extends JPanel {
     }
 
     public void paintComponent(Graphics g) {
-        //if (s_wait) return;
+        if (s_waiting) return;
         g.setColor(s_background_color);
         g.fillRect(0, 0, s_window_size, s_window_size);
         if (s_game_mode_selected) {
-            //System.out.println("Here!");
-            //if (s_game_ongoing) {
-                //System.out.println("AAAA");
+            if (s_game.getGameState() == Game.GameState.GAME_OVER) {
+                updateScoresAndPrintOutcome();
+            }
             s_game.draw(g);
-            //} else {
-                //playOneGame();
-            //}
         } else {
-            //System.out.println("CCCC");   
             g.setColor(Color.LIGHT_GRAY);
             g.fillRect(0, 0, s_window_size, s_window_size);
-            //s_wait = true;
             setGameModeAndCreatePlayers();
             s_game = new Game(s_game_board_size, s_players);
+            s_game_index++;
             s_timer.start();
-            //s_wait = false;
         }
     }
 
@@ -108,6 +102,7 @@ public class Checkers extends JPanel {
 
     // get desired game mode: single or multi player 
     private static void setGameModeAndCreatePlayers() {
+        s_waiting = true;
         String[] choices = {"8x8 American", "10x10 International", "12x12 Canadian"};
         String user_choice = (String) JOptionPane.showInputDialog(s_window, "Select board size",
                                                                   "Game Settings", 
@@ -141,6 +136,7 @@ public class Checkers extends JPanel {
         }
         createPlayers();
         s_game_mode_selected = true;
+        s_waiting = false;
     }
 
     private static void createPlayers() {
@@ -161,7 +157,7 @@ public class Checkers extends JPanel {
                 JTextField player1_name_field = new JTextField();
                 JTextField player2_name_field = new JTextField();
                 Object[] message1 = {"Enter player 1 name", player1_name_field, 
-                                    "Enter player 2 name", player2_name_field,};
+                                     "Enter player 2 name", player2_name_field};
                 int option1 = JOptionPane.showConfirmDialog(s_window, message1, "Enter player name", 
                                                            JOptionPane.OK_CANCEL_OPTION);
                 if (option1 == JOptionPane.OK_OPTION) {
@@ -174,75 +170,50 @@ public class Checkers extends JPanel {
         }
     }
 
-    // private static void playOneGame() {
-    //     if (!s_game_ongoing) {
-    //         s_game_index++;
-    //         System.out.println("\nGame #" + s_game_index + " ongoing...\n");
-    //         s_game = new Game(s_game_board_size, s_players);
-    //         s_game_ongoing = true;
-    //         s_curr_winner_index = s_game.play();
-    //         s_game_ongoing = false;
-    //     }
-    // }
-
-    // // TO FIX
-    // private static void printGamePlayErrorMessage() {
-    //     System.out.println("Something went wrong during gameplay :(");
-    // }
-
-    private static void updateScoresAndPrintOutcome() {
-        s_games_won[s_curr_winner_index] += 1;
-        System.out.println(s_players[s_curr_winner_index].getName() + " won game #" + s_game_index);
-        System.out.println("Current Score: " + s_players[0].getName() + " [" + s_games_won[0]
-                                 + "] vs. [" + s_games_won[1] + "] " + s_players[1].getName());
-    }
-
-    private static boolean userWantsNewGame() {
-        // return UtilityFuncs.getUserChoice(new String[] {"New game", "Exit"}, 
-        //                                   new String[] {"N", "E"}).equals("N");
-        return false;
-    }
-
     private static void printOutro() {
-        String outro = "\nGame over! ";
+        String outro = "Game over!\n\n";
         if (s_games_won[0] == s_games_won[1]) {
             outro += "Game ends in a tie!";
         } else {
             outro += s_players[(s_games_won[0] > s_games_won[1]) ? 0 : 1].getName()  
-                     + " won the most games!";
+                     + " won the most games!\n\n";
         }
-        System.out.println(outro + "\nFinal score: " + s_players[0].getName() + " [" 
-                           + s_games_won[0] + "] vs. [" + s_games_won[1] + "] " 
-                           + s_players[1].getName());
+        outro += "Final score: " + s_players[0].getName() + " [" 
+                                 + s_games_won[0] + "] vs. [" + s_games_won[1] + "] " 
+                                 + s_players[1].getName();
+        JOptionPane.showMessageDialog(s_window, outro, "Game Over", JOptionPane.INFORMATION_MESSAGE);
+        s_window.dispatchEvent(new WindowEvent(s_window, WindowEvent.WINDOW_CLOSING));
+    }
+
+    private static void updateScoresAndPrintOutcome() {
+        s_waiting = true;
+        s_curr_winner_index = s_game.getWinnerIndex();
+        s_games_won[s_curr_winner_index] += 1;
+        String message = s_players[s_curr_winner_index].getName() + " won game #" + s_game_index + "\n\n";
+        message += "Current Score: " + s_players[0].getName() + " [" + s_games_won[0]
+                                 + "] vs. [" + s_games_won[1] + "] " + s_players[1].getName() + "\n\n";
+        message += "Play new game?";
+        Object[] options = {"Yes", "No"};
+        int choice = JOptionPane.showOptionDialog(s_window, message, "New Game?", JOptionPane.YES_NO_OPTION,
+                                                JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+        if (choice == JOptionPane.YES_OPTION) {
+            s_game = new Game(s_game_board_size, s_players);
+            s_game_index++;
+            s_waiting = false;
+        } else {
+            printOutro();
+        }
     }
 
     public static void main(String[] args) {
         s_window = new JFrame("GUI Checkers");
         s_window.setContentPane(new Checkers());
-        s_window.setSize(s_window_size, s_window_size);
+        //s_window.setSize(s_window_size, s_window_size);
+        s_window.getContentPane().setPreferredSize(new Dimension(s_window_size, s_window_size));
+        s_window.pack();
         s_window.setLocation(100,100);
         s_window.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         s_window.setResizable(false);  // User can't change the window's size.
         s_window.setVisible(true);
-
-        //printIntro();
-        //setGameMode();
-        //createPlayers();
-
-        // while (true) {
-        //     // IS THERE NEED TO REFRESH PLAYERS HERE?
-        //     playOneGame();
-        //     if (s_curr_winner_index == -1) {
-        //         //printGamePlayErrorMessage();
-        //         printOutro();
-        //         break;
-        //     } else {
-        //         updateScoresAndPrintOutcome();
-        //         if (!userWantsNewGame()) {
-        //             printOutro();
-        //             break;
-        //         }
-        //     }
-        // }
     }
 }

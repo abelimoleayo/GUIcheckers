@@ -9,14 +9,13 @@ public class AIPlayer extends Player {
 
     public AIPlayer(String name, int board_label, boolean reflect, Color piece_color, 
                     Color crown_color) {
-        super(name, board_label, reflect, piece_color, crown_color);
+        super(name, board_label, reflect, piece_color, crown_color, Player.PlayerType.AI);
     }
 
     public AIPlayer(int board_label, boolean reflect, Color piece_color, Color crown_color) {
-        super("Default_AI_name", board_label, reflect, piece_color, crown_color);
+        super("Default_AI_name", board_label, reflect, piece_color, crown_color, Player.PlayerType.AI);
     }
 
-    @Override
     public int getMove(Map<Integer,Set<String>> moveable_pieces_pos, int[][] game_board, 
                                                                  boolean source_selected) {
         int choice = 0;
@@ -43,7 +42,7 @@ public class AIPlayer extends Player {
             choice = this.m_selected_move; 
         }
 
-        System.out.println(choice);
+        //System.out.println(choice);
         return choice;
 
 
