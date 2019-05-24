@@ -23,25 +23,7 @@ public class Checkers extends JPanel {
     private static int s_game_board_size;
     private static boolean s_wait;
     private static boolean s_game_ongoing;
-
-    public static int getBoardCellWidth() {
-        return s_board_cell_width;
-    }
-
-    public static int getBoardPieceWidth() {
-        return s_board_piece_width;
-    }
-
-    public static int getGameBoardSize() {
-        return s_game_board_size;
-    }
-
-    public static int[] getTopLeftCoordFromPos(int global_pos) {
-        int row = global_pos/s_game_board_size;
-        int col = global_pos%s_game_board_size;        
-        int[] coords = {col*s_board_cell_width, (s_game_board_size - row - 1)*s_board_cell_width}; 
-        return coords;
-    }
+    public static final int s_animation_steps = 20;
 
     private Checkers() {
         ActionListener action = new ActionListener() {
@@ -87,21 +69,41 @@ public class Checkers extends JPanel {
         g.fillRect(0, 0, s_window_size, s_window_size);
         if (s_game_mode_selected) {
             //System.out.println("Here!");
-            if (s_game_ongoing) {
+            //if (s_game_ongoing) {
                 //System.out.println("AAAA");
-                s_game.draw(g);
-            } else {
+            s_game.draw(g);
+            //} else {
                 //playOneGame();
-            }
+            //}
         } else {
             //System.out.println("CCCC");   
-            //g.setColor(Color.LIGHT_GRAY);
-            //g.fillRect(0, 0, s_window_size, s_window_size);
+            g.setColor(Color.LIGHT_GRAY);
+            g.fillRect(0, 0, s_window_size, s_window_size);
             //s_wait = true;
             setGameModeAndCreatePlayers();
+            s_game = new Game(s_game_board_size, s_players);
             s_timer.start();
             //s_wait = false;
         }
+    }
+
+    public static int getBoardCellWidth() {
+        return s_board_cell_width;
+    }
+
+    public static int getBoardPieceWidth() {
+        return s_board_piece_width;
+    }
+
+    public static int getGameBoardSize() {
+        return s_game_board_size;
+    }
+
+    public static int[] getTopLeftCoordFromPos(int global_pos) {
+        int row = global_pos/s_game_board_size;
+        int col = global_pos%s_game_board_size;        
+        int[] coords = {col*s_board_cell_width, (s_game_board_size - row - 1)*s_board_cell_width};
+        return coords;
     }
 
     // get desired game mode: single or multi player 
@@ -142,6 +144,7 @@ public class Checkers extends JPanel {
     }
 
     private static void createPlayers() {
+        System.out.println("FIX CAPTURES ARRAY THING");
         switch (s_game_mode) {
             case SINGLE_PLAYER:
                 JTextField player_name_field = new JTextField();

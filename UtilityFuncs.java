@@ -10,7 +10,7 @@ public class UtilityFuncs {
         double p2_rad = Math.PI - p6_rad;
         double p1_rad = Math.PI + p6_rad;
         double p7_rad = -p6_rad;
-        int radius = (int) (0.8*width);
+        int radius = (int) (0.5*width);
         int r1 = (int) (0.8*radius), r2 = (int) (0.4*radius), r3 = r1-r2/2;
         int jewel_diam = (int) (0.4*r1), jewel_radius = jewel_diam/2; 
         int p1X = (int) (centerX + r3*Math.cos(p1_rad));

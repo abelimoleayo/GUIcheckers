@@ -10,6 +10,7 @@ public abstract class Player {
     private String m_name;
     private int m_num_pieces;
     private Set<Piece> m_pieces;
+    private Set<Piece> m_animating_captured_pieces;
     public final int m_int_label; 
     public final boolean m_reflect_pos;
     public final Color m_piece_color;
@@ -24,6 +25,7 @@ public abstract class Player {
         m_piece_color = piece_color;
         m_crown_color = crown_color;
         m_pieces = new HashSet<Piece>();
+        m_animating_captured_pieces = new HashSet<Piece>();
     }
 
     public String getName() {
@@ -35,9 +37,10 @@ public abstract class Player {
         m_num_pieces++;
     }
 
-    public void removePiece(Piece piece) {
+    public void removePiece(Piece piece, int capture_animation_index) {
         m_pieces.remove(piece);
-        piece.isCaptured();
+        m_animating_captured_pieces.add(piece);
+        piece.isCaptured(capture_animation_index);
         m_num_pieces--;
     }
 
@@ -62,18 +65,29 @@ public abstract class Player {
     public void clearPieces() {
         m_num_pieces = 0;
         m_pieces = new HashSet<Piece>();
+        m_animating_captured_pieces = new HashSet<Piece>();
     }
 
-    public boolean animating() {
+    public boolean isAnimating() {
         for (Piece piece : m_pieces) {
+            if (piece.isMoving()) return true;
+        }
+        for (Piece piece : m_animating_captured_pieces) {
             if (piece.isMoving()) return true;
         }
         return false;
     }
 
     public void draw(Graphics g) {
-        for (Piece p : m_pieces) {
-            p.draw(g);
+        for (Piece piece : m_pieces) {
+            piece.draw(g);
+        }
+        for (Piece piece : m_animating_captured_pieces) {
+            if (piece.isMoving()) {
+                piece.draw(g);
+            } else {
+                m_animating_captured_pieces.remove(piece);
+            }
         }
     }
 
