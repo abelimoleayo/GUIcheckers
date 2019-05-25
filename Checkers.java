@@ -22,7 +22,7 @@ public class Checkers extends JPanel {
     private static int s_board_piece_width;
     private static int s_game_board_size;
     private static boolean s_game_ongoing;
-    public static final int s_animation_steps = 20;
+    public static final int s_animation_steps = 15;
 
     private Checkers() {
         ActionListener action = new ActionListener() {

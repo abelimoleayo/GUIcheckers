@@ -3,6 +3,7 @@ import java.awt.*;
 
 public class BoardCell {
 
+    // possible cell states defining color of board cell
     public static enum CellState {
         DEFAULT, VALID_SOURCE, INVALID_SELECTION, SELECTED_SOURCE, 
         ON_PATH, ON_ANIMATION_PATH, DESTINATION, KING_DESTINATION;
