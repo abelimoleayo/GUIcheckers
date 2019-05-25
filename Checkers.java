@@ -3,26 +3,26 @@ import java.awt.event.*;
 import javax.swing.*;
 
 public class Checkers extends JPanel {
+
     private static enum GameMode {
         SINGLE_PLAYER, MULTI_PLAYER;
     }
-
     private static GameMode s_game_mode; 
     private static Player[] s_players = new Player[2];
-    private static int s_game_index = 0;
+    private static int s_game_index, s_curr_winner_index, s_board_cell_width, s_board_piece_width, 
+                       s_game_board_size;
     private static int[] s_games_won = {0, 0};
-    private static int s_curr_winner_index;
+    private static boolean s_game_mode_selected, s_waiting;
     private static Game s_game;
     private static Timer s_timer;
     private static JFrame s_window;
-    private static final Color s_background_color = Color.WHITE;
-    private static boolean s_game_mode_selected, s_waiting;
-    private static int s_window_size = 720;
-    private static int s_board_cell_width;
-    private static int s_board_piece_width;
-    private static int s_game_board_size;
-    private static boolean s_game_ongoing;
-    public static final int s_animation_steps = 15;
+    private static final Color s_background_color = new Color(214,179,134);
+    private static final Color s_player1_color = new Color(252,204,145);
+    private static final Color s_player2_color = Color.BLACK;
+    private static final Color s_player1_crown_color = Color.CYAN;
+    private static final Color s_player2_crown_color = Color.YELLOW;
+    private static final int s_window_size = 720;
+    public static final int s_animation_steps = 15;    
 
     private Checkers() {
         ActionListener action = new ActionListener() {
@@ -64,16 +64,14 @@ public class Checkers extends JPanel {
 
     public void paintComponent(Graphics g) {
         if (s_waiting) return;
-        g.setColor(s_background_color);
-        g.fillRect(0, 0, s_window_size, s_window_size);
         if (s_game_mode_selected) {
             if (s_game.getGameState() == Game.GameState.GAME_OVER) {
                 updateScoresAndPrintOutcome();
             }
+            g.setColor(s_background_color);
+            g.fillRect(0, 0, s_window_size, s_window_size);
             s_game.draw(g);
         } else {
-            g.setColor(Color.LIGHT_GRAY);
-            g.fillRect(0, 0, s_window_size, s_window_size);
             setGameModeAndCreatePlayers();
             s_game = new Game(s_game_board_size, s_players);
             s_game_index++;
@@ -100,7 +98,6 @@ public class Checkers extends JPanel {
         return coords;
     }
 
-    // get desired game mode: single or multi player 
     private static void setGameModeAndCreatePlayers() {
         s_waiting = true;
         String[] choices = {"8x8 American", "10x10 International", "12x12 Canadian"};
@@ -140,17 +137,18 @@ public class Checkers extends JPanel {
     }
 
     private static void createPlayers() {
-        System.out.println("FIX CAPTURES ARRAY THING");
         switch (s_game_mode) {
             case SINGLE_PLAYER:
                 JTextField player_name_field = new JTextField();
                 Object[] message = {"Enter player name", player_name_field};
                 int option = JOptionPane.showConfirmDialog(s_window, message, "Enter player name", 
                                                            JOptionPane.OK_CANCEL_OPTION);
+                String player_name = (player_name_field.getText().length() == 0) ? "Player 1" :
+                                                                                player_name_field.getText();
                 if (option == JOptionPane.OK_OPTION) {
-                    s_players[0] = new HumanPlayer(player_name_field.getText(), 1, false, 
-                                                   Color.PINK, Color.YELLOW);
-                    s_players[1] = new AIPlayer("AI", 2, true, Color.BLACK, Color.CYAN);
+                    s_players[0] = new HumanPlayer(player_name, 1, false, s_player1_color, 
+                                                   s_player1_crown_color);
+                    s_players[1] = new AIPlayer("AI", 2, true, s_player2_color, s_player2_crown_color);
                 }               
                 break;
             case MULTI_PLAYER: 
@@ -160,11 +158,15 @@ public class Checkers extends JPanel {
                                      "Enter player 2 name", player2_name_field};
                 int option1 = JOptionPane.showConfirmDialog(s_window, message1, "Enter player name", 
                                                            JOptionPane.OK_CANCEL_OPTION);
+                String player1_name = (player1_name_field.getText().length() == 0) ? "Player 1" :
+                                                                            player1_name_field.getText();
+                String player2_name = (player2_name_field.getText().length() == 0) ? "Player 2" :
+                                                                                player2_name_field.getText();
                 if (option1 == JOptionPane.OK_OPTION) {
-                    s_players[0] = new HumanPlayer(player1_name_field.getText(), 1, false, 
-                                                   Color.PINK, Color.YELLOW);
-                    s_players[1] = new HumanPlayer(player2_name_field.getText(), 2, true, 
-                                                   Color.BLACK, Color.CYAN);
+                    s_players[0] = new HumanPlayer(player1_name, 1, false, s_player1_color, 
+                                                   s_player1_crown_color);
+                    s_players[1] = new HumanPlayer(player2_name, 2, true, s_player2_color, 
+                                                   s_player2_crown_color);
                 }               
                 break;
         }
@@ -208,12 +210,11 @@ public class Checkers extends JPanel {
     public static void main(String[] args) {
         s_window = new JFrame("GUI Checkers");
         s_window.setContentPane(new Checkers());
-        //s_window.setSize(s_window_size, s_window_size);
         s_window.getContentPane().setPreferredSize(new Dimension(s_window_size, s_window_size));
         s_window.pack();
         s_window.setLocation(100,100);
         s_window.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-        s_window.setResizable(false);  // User can't change the window's size.
+        s_window.setResizable(false);
         s_window.setVisible(true);
     }
 }

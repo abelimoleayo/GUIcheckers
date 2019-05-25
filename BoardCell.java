@@ -11,14 +11,14 @@ public class BoardCell {
 
     private static Map<CellState,Color> s_color_map = new HashMap<CellState,Color>() {
         {
-            put(CellState.DEFAULT, Color.LIGHT_GRAY);
-            put(CellState.VALID_SOURCE, Color.ORANGE);
+            put(CellState.DEFAULT, new Color(130,81,43));
+            put(CellState.VALID_SOURCE, new Color(255,140,0));
             put(CellState.INVALID_SELECTION, Color.RED);
-            put(CellState.SELECTED_SOURCE, Color.GREEN);
-            put(CellState.ON_PATH, Color.BLUE);
-            put(CellState.ON_ANIMATION_PATH, Color.GREEN);
-            put(CellState.DESTINATION, Color.GREEN);
-            put(CellState.KING_DESTINATION, Color.GREEN);
+            put(CellState.SELECTED_SOURCE, new Color(116,194,0));
+            put(CellState.ON_PATH, new Color(46,130,255));
+            put(CellState.ON_ANIMATION_PATH, new Color(116,194,0));
+            put(CellState.DESTINATION, new Color(116,194,0));
+            put(CellState.KING_DESTINATION, new Color(116,194,0));
         }
     };
     private final int[] m_coords;
