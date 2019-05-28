@@ -63,7 +63,12 @@ public class Checkers extends JPanel {
     }
 
     public void paintComponent(Graphics g) {
-        if (s_waiting) return;
+        if (s_waiting) {
+            g.setColor(s_background_color);
+            g.fillRect(0, 0, s_window_size, s_window_size);
+            if (s_game != null) s_game.draw(g);
+            return;
+        }
         if (s_game_mode_selected) {
             if (s_game.getGameState() == Game.GameState.GAME_OVER) {
                 updateScoresAndPrintOutcome();
@@ -143,7 +148,7 @@ public class Checkers extends JPanel {
                 Object[] message = {"Enter player name", player_name_field};
                 int option = JOptionPane.showConfirmDialog(s_window, message, "Enter player name", 
                                                            JOptionPane.OK_CANCEL_OPTION);
-                String player_name = (player_name_field.getText().length() == 0) ? "Player 1" :
+                String player_name = (player_name_field.getText().length() == 0) ? "Human" :
                                                                                 player_name_field.getText();
                 if (option == JOptionPane.OK_OPTION) {
                     s_players[0] = new HumanPlayer(player_name, 1, false, s_player1_color, 

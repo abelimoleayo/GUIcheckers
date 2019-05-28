@@ -1,6 +1,5 @@
 import java.util.*;
 import java.awt.Graphics;
-//import BoardCell.CellState;     
 
 public class Game {
     public static enum GameState {
@@ -29,6 +28,7 @@ public class Game {
     // Constructor to initialize instance variables
     public Game(int board_size, Player[] players)   {
         m_players = players;
+        clearPlayersPieces();
 
         m_board_size = board_size;
         m_board = new int[m_board_size][m_board_size];
@@ -363,7 +363,6 @@ public class Game {
         }
 
         if (m_movable_pieces.size() == 0) {
-            clearPlayersPieces();
             m_winner_index = (m_curr_player_index + 1) % 2;
             m_game_state = GameState.GAME_OVER;
         } else {

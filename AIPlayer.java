@@ -42,7 +42,6 @@ public class AIPlayer extends Player {
             choice = this.m_selected_move; 
         }
 
-        //System.out.println(choice);
         return choice;
 
 

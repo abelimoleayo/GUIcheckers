@@ -6,16 +6,14 @@ public abstract class Player {
     public static enum PlayerType {
         HUMAN, AI;
     }
-
+    
     // POSITIONS ARE IN PLAYER POV!!!
     private String m_name;
     private int m_num_pieces;
-    private Set<Piece> m_pieces;
-    private Set<Piece> m_animating_captured_pieces;
+    private Set<Piece> m_pieces, m_animating_captured_pieces;
     public final int m_int_label; 
     public final boolean m_reflect_pos;
-    public final Color m_piece_color;
-    public final Color m_crown_color;
+    public final Color m_piece_color, m_crown_color;
     public final PlayerType m_type;
 
     public Player(String name, int board_label, boolean reflect, Color piece_color, 

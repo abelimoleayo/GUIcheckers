@@ -5,11 +5,10 @@ public class Piece {
     private static int s_ID_tracker = 0;
     private final int m_ID, m_piece_width, m_cell_width;
     private final Player m_owner;
-    private int m_position, m_capture_index, m_jump_stop_index;
-    private int m_DeltaX, m_DeltaY, m_animation_step, m_total_animation_steps;
+    private int m_position, m_capture_index, m_jump_stop_index, m_DeltaX, m_DeltaY, 
+                m_animation_step, m_total_animation_steps;
     private int[] m_global_coords, m_last_stop_coords;
     private int[][] m_stop_coords;
-    private double m_curr_x, m_curr_y;
 	private boolean m_to_make_king, m_isKing, m_isMoving, m_isCaptured;
 
 	public Piece(int pos, Player owner) {
