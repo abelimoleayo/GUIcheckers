@@ -5,6 +5,7 @@ public class UtilityFuncs {
     
     public static Random r = new Random();
 
+    // draw crown icon inside circle of given width/diameter
     public static void drawKingIcon(Graphics g, int centerX, int centerY, int width, Color color) {        
         double p6_rad = Math.toRadians(25.0);
         double p2_rad = Math.PI - p6_rad;

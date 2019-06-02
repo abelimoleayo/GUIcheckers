@@ -8,14 +8,15 @@ public abstract class Player {
     }
     
     // POSITIONS ARE IN PLAYER POV!!!
-    private String m_name;
-    private int m_num_pieces;
-    private Set<Piece> m_pieces, m_animating_captured_pieces;
-    public final int m_int_label; 
-    public final boolean m_reflect_pos;
-    public final Color m_piece_color, m_crown_color;
-    public final PlayerType m_type;
+    private String m_name;               // player name
+    private int m_num_pieces;            // total number of player pieces
+    private Set<Piece> m_pieces, m_animating_captured_pieces;  // set of pieces
+    public final int m_int_label;        // integer label for player in internal game board representation
+    public final boolean m_reflect_pos;  // if piece positions are opposite game POV and need to be reflected     
+    public final Color m_piece_color, m_crown_color; // color of player piece and crown
+    public final PlayerType m_type;      // player type
 
+    // constructor
     public Player(String name, int board_label, boolean reflect, Color piece_color, 
                   Color crown_color, PlayerType type) {
         m_name = name;
@@ -45,6 +46,7 @@ public abstract class Player {
         m_num_pieces--;
     }
 
+    // get array of positions of all pieces of the player
     public int[] getPiecePositions() {
         int[] positions = new int[m_num_pieces];
         int index = 0;
@@ -54,6 +56,7 @@ public abstract class Player {
         return positions;
     }
 
+    // get the piece at a given position
     public Piece pieceAtPos(int pos) {
         for (Piece piece : m_pieces) {
             if (pos == piece.getPos()) {
@@ -63,12 +66,14 @@ public abstract class Player {
         return null;
     }
 
+    // clear all player pieces
     public void clearPieces() {
         m_num_pieces = 0;
         m_pieces = new HashSet<Piece>();
         m_animating_captured_pieces = new HashSet<Piece>();
     }
 
+    // check if any of the player's pieces is moving/being animated
     public boolean isAnimating() {
         for (Piece piece : m_pieces) {
             if (piece.isMoving()) return true;
@@ -79,10 +84,15 @@ public abstract class Player {
         return false;
     }
 
+    // draw all of the player's pieces
     public void draw(Graphics g) {
+        // draw all of player's piece
         for (Piece piece : m_pieces) {
             piece.draw(g);
         }
+
+        // for pieces that have been captured, draw the ones still animating and 
+        // coalate the ones that are done moving
         Set<Piece> to_remove = new HashSet<Piece>();
         for (Piece piece : m_animating_captured_pieces) {
             if (piece.isMoving()) {
@@ -91,6 +101,8 @@ public abstract class Player {
                 to_remove.add(piece);
             }
         }
+
+        // remove pieces that have been captured and are done animating
         for (Piece piece : to_remove) {
             m_animating_captured_pieces.remove(piece);
         }

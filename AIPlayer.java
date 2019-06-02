@@ -5,21 +5,25 @@ public class AIPlayer extends Player {
 
     private int m_selected_move;
 
-    // TODO: add field to store difficulty level
+    // TODO: add class variable to store difficulty level
 
+    // constructor
     public AIPlayer(String name, int board_label, boolean reflect, Color piece_color, 
                     Color crown_color) {
         super(name, board_label, reflect, piece_color, crown_color, Player.PlayerType.AI);
     }
 
+    // constructor for when name isn't provided
     public AIPlayer(int board_label, boolean reflect, Color piece_color, Color crown_color) {
         super("Default_AI_name", board_label, reflect, piece_color, crown_color, Player.PlayerType.AI);
     }
 
+    // get AI player's move from collection of possible moves
     public int getMove(Map<Integer,Set<String>> moveable_pieces_pos, int[][] game_board, 
                                                                  boolean source_selected) {
         int choice = 0;
-        // TEMP: pick randomly
+
+        // TEMPORARY: pick randomly
         if (!source_selected) {
             int rand_index = UtilityFuncs.r.nextInt(moveable_pieces_pos.keySet().size());
             int idx = 0;
@@ -39,7 +43,7 @@ public class AIPlayer extends Player {
                 }
             }
         } else {
-            choice = this.m_selected_move; 
+            choice = m_selected_move; 
         }
 
         return choice;
