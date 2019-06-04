@@ -222,7 +222,7 @@ public class Checkers extends JPanel {
     private static void printOutro() {
         String outro = "Game over!\n\n";
         if (s_games_won[0] == s_games_won[1]) {
-            outro += "Game ends in a tie!";
+            outro += "Game ends in a tie!\n\n";
         } else {
             outro += s_players[(s_games_won[0] > s_games_won[1]) ? 0 : 1].getName()  
                      + " won the most games!\n\n";

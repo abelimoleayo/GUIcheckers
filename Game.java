@@ -530,7 +530,7 @@ public class Game {
                             curr_global_pos = player.m_reflect_pos ? 
                                                     reflectPosition(curr_pos, m_board_size) : curr_pos;
                             curr_board_cell = m_board_cells.get(curr_global_pos);
-                            curr_board_cell.setCellState(BoardCell.CellState.ON_PATH, player);
+                            curr_board_cell.setCellState(BoardCell.CellState.ON_JUMP_PATH, player);
                             m_painted_cells.add(curr_board_cell);
                         } while (row != end_row || col != end_col);
                     }

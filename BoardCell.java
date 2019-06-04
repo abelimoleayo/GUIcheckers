@@ -9,7 +9,7 @@ public class BoardCell {
         VALID_SOURCE,       // piece on this cell is a valid selection
         INVALID_SELECTION,  // piece on this cell is an invalid selection
         SELECTED_SOURCE,    // user has selected this piece as the piece to move
-        ON_PATH,            // this cell is on a possible jump-path/capture-path of the selected source piece 
+        ON_JUMP_PATH,       // this cell is on a possible jump-path/capture-path of the selected source piece 
         ON_ANIMATION_PATH,  // this cell is on THE path of the selected move
         DESTINATION,        // this cell is a possible destination cell for the moving piece
         KING_DESTINATION;   // this cell is a possible destination cell that will crown the moving piece
@@ -22,7 +22,7 @@ public class BoardCell {
             put(CellState.VALID_SOURCE, new Color(255,140,0));       // orange-ish
             put(CellState.INVALID_SELECTION, Color.RED);             // red
             put(CellState.SELECTED_SOURCE, new Color(116,194,0));    // green
-            put(CellState.ON_PATH, new Color(46,130,255));           // blue
+            put(CellState.ON_JUMP_PATH, new Color(46,130,255));      // blue
             put(CellState.ON_ANIMATION_PATH, new Color(116,194,0));  // green
             put(CellState.DESTINATION, new Color(116,194,0));        // green
             put(CellState.KING_DESTINATION, new Color(116,194,0));   // green
