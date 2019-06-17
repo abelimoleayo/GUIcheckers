@@ -50,5 +50,12 @@ public class AIPlayer extends Player {
 
 
         // ACTUAL: AI logic (use difficulty level field)
+
+        // can't modify board
+    }
+
+    private int evalBoard(int[][] game_board, int player_label, int opponent_label) {
+        // kings be *2, board charaxcter will be squared of m_int_label
+        return 0;
     }
 }

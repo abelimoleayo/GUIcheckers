@@ -47,11 +47,10 @@ public abstract class Player {
     }
 
     // get array of positions of all pieces of the player
-    public int[] getPiecePositions() {
-        int[] positions = new int[m_num_pieces];
-        int index = 0;
+    public Set<Integer> getPiecePositions() {
+        Set<Integer> positions = new HashSet<Integer>();
         for (Piece piece : m_pieces) {
-            positions[index++] = piece.getPos(); 
+            positions.add(piece.getPos());
         }
         return positions;
     }
@@ -85,10 +84,10 @@ public abstract class Player {
     }
 
     // draw all of the player's pieces
-    public void draw(Graphics g) {
+    public void draw(Graphics g, boolean has_focus) {
         // draw all of player's piece
         for (Piece piece : m_pieces) {
-            piece.draw(g);
+            piece.draw(g, has_focus);
         }
 
         // for pieces that have been captured, draw the ones still animating and 
@@ -96,7 +95,7 @@ public abstract class Player {
         Set<Piece> to_remove = new HashSet<Piece>();
         for (Piece piece : m_animating_captured_pieces) {
             if (piece.isMoving()) {
-                piece.draw(g);
+                piece.draw(g, has_focus);
             } else {
                 to_remove.add(piece);
             }

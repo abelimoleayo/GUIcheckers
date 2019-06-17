@@ -38,6 +38,7 @@ public class Checkers extends JPanel {
         // mouse listener to check for mouse-press events
         addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent evt) {
+                requestFocus();
                 processMousePress(evt);
             }
         } );
@@ -78,7 +79,7 @@ public class Checkers extends JPanel {
         if (s_waiting) {  
             g.setColor(s_background_color);
             g.fillRect(0, 0, s_window_size, s_window_size);
-            if (s_game != null) s_game.draw(g);
+            if (s_game != null) s_game.draw(g, isFocusOwner());
             return;
         }
         // if game mode has been selected, draw, otherwise, prompt for game mode and settings
@@ -88,9 +89,10 @@ public class Checkers extends JPanel {
             }
             g.setColor(s_background_color);
             g.fillRect(0, 0, s_window_size, s_window_size);
-            s_game.draw(g);
+            s_game.draw(g, isFocusOwner());
         } else {
             setGameModeAndCreatePlayers();
+            if (s_game_mode == GameMode.ZERO_PLAYER) requestFocus();
             s_game = new Game(s_game_board_size, s_players);
             s_game_index++;
             s_timer.start();

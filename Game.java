@@ -104,11 +104,12 @@ public class Game {
     }
 
     // given the start and stop index of a jump, compute the index of the captured piece
-    private int computeCapturePos(int start, int end, Player player) {
-        int start_row = start/m_board_size;
-        int start_col = start%m_board_size;
-        int end_row = end/m_board_size;
-        int end_col = end%m_board_size;
+    private static int computeCapturePos(int start, int end, int[][] board, int board_size, 
+                                         boolean reflect_pos, int player_label, int opponent_label) {
+        int start_row = start/board_size;
+        int start_col = start%board_size;
+        int end_row = end/board_size;
+        int end_col = end%board_size;
         int d_row = (end_row > start_row) ? 1 : -1; 
         int d_col = (end_col > start_col) ? 1 : -1;
         int curr_row = start_row;
@@ -117,10 +118,9 @@ public class Game {
         while (curr_row != end_row) {
             curr_row += d_row;
             curr_col += d_col; 
-            curr_board_pos = curr_pos = curr_row*m_board_size + curr_col;
-            if (player.m_reflect_pos) curr_board_pos = reflectPosition(curr_pos, m_board_size);
-            if (m_board[curr_board_pos/m_board_size]
-                       [curr_board_pos%m_board_size] == opponentLabel(player, m_players)) {
+            curr_board_pos = curr_pos = curr_row*board_size + curr_col;
+            if (reflect_pos) curr_board_pos = reflectPosition(curr_pos, board_size);
+            if (board[curr_board_pos/board_size][curr_board_pos%board_size] == opponent_label) {
                 break;
             }
         }
@@ -128,16 +128,17 @@ public class Game {
     }
 
     // identify set of landing positions one jump away from a given position
-    private Set<Integer> getJumpChildren(int pos, boolean isKing, Integer parent, 
-                                         Set<Integer> ancestors, Set<Integer> past_captures, 
-                                         Player player, int opponent_label) {
-        int row = pos/m_board_size;
-        int col = pos%m_board_size;
+    private static Set<Integer> getJumpChildren(int pos, boolean isKing, Integer parent, 
+                                                Set<Integer> ancestors, Set<Integer> past_captures, 
+                                                int[][] board, int board_size, boolean reflect_pos, 
+                                                int opponent_label) {
+        int row = pos/board_size;
+        int col = pos%board_size;
         int toward_parent_row_diff = 0;
         int toward_parent_col_diff = 0;
         if (parent != null) {
-            toward_parent_row_diff = (((int) parent/m_board_size) > row) ? 1 : -1;
-            toward_parent_col_diff = (((int) parent%m_board_size) > col) ? 1 : -1;
+            toward_parent_row_diff = (((int) parent/board_size) > row) ? 1 : -1;
+            toward_parent_col_diff = (((int) parent%board_size) > col) ? 1 : -1;
         }
         int[] row_diffs = new int[]{1, -1};
         int[] col_diffs = new int[]{1, -1};
@@ -159,39 +160,37 @@ public class Game {
                 do {  // for regular pieces, loop once; for kings, loop iuntil road_block
                     capture_row += r_diff;
                     capture_col += c_diff;
-                    capture_pos = capture_row*m_board_size + capture_col;
-                    capture_board_pos = player.m_reflect_pos ? reflectPosition(capture_pos, m_board_size)
-                                                             : capture_pos;
+                    capture_pos = capture_row*board_size + capture_col;
+                    capture_board_pos = reflect_pos ? reflectPosition(capture_pos, board_size) : capture_pos;
                     if (!piece_captured) { // no piece captured, check if capturable piece exists here
                         // check if capturable piece position is within bounds
-                        if ((capture_row > 0) && (capture_row < (m_board_size - 1)) && 
-                                    (capture_col > 0) && (capture_col < (m_board_size - 1)) &&
+                        if ((capture_row > 0) && (capture_row < (board_size - 1)) && 
+                                    (capture_col > 0) && (capture_col < (board_size - 1)) &&
                                                                 !past_captures.contains(capture_pos)) {
                             child_row = capture_row + r_diff;
                             child_col = capture_col + c_diff;
-                            child_pos = child_row*m_board_size + child_col;
-                            child_board_pos = player.m_reflect_pos ? reflectPosition(child_pos, m_board_size)
-                                                                   : child_pos;
+                            child_pos = child_row*board_size + child_col;
+                            child_board_pos = reflect_pos ? reflectPosition(child_pos, board_size) : child_pos;
                             // check if landing cell just after capture piece is free
-                            if ((m_board[capture_board_pos/m_board_size]
-                                        [capture_board_pos%m_board_size] == opponent_label) && 
-                                    ((m_board[child_board_pos/m_board_size]
-                                             [child_board_pos%m_board_size] == 0) || 
+                            if ((board[capture_board_pos/board_size]
+                                        [capture_board_pos%board_size] == opponent_label) && 
+                                    ((board[child_board_pos/board_size]
+                                             [child_board_pos%board_size] == 0) || 
                                       ancestors.contains(child_pos))) {
                                 children.add(child_pos);
                                 piece_captured = true;
-                            } else if (m_board[capture_board_pos/m_board_size]
-                                              [capture_board_pos%m_board_size] != 0) {
+                            } else if (board[capture_board_pos/board_size]
+                                              [capture_board_pos%board_size] != 0) {
                                 road_block = true;
                             }
                         } else {
                             road_block = true;
                         }
                     } else { // piece already captured, add every free cell in direction to children list
-                        if ((capture_row >= 0) && (capture_row < m_board_size) && 
-                                    (capture_col >= 0) && (capture_col < m_board_size)) {
-                            if (m_board[capture_board_pos/m_board_size]
-                                       [capture_board_pos%m_board_size] == 0) {
+                        if ((capture_row >= 0) && (capture_row < board_size) && 
+                                    (capture_col >= 0) && (capture_col < board_size)) {
+                            if (board[capture_board_pos/board_size]
+                                       [capture_board_pos%board_size] == 0) {
                                 children.add(capture_pos);
                                 continue;
                             }
@@ -207,13 +206,14 @@ public class Game {
 
     // (for possible king jumps) in each jump direction, if at least one child with children exists, 
     // remove all childless children in that direction
-    private Set<Integer> removeBarrenChildrenInEachDirection(Set<Integer> all_children, 
-                                                             Map<Integer,String> children_paths,
-                                                             Integer parent) {
+    private static Set<Integer> removeBarrenChildrenInEachDirection(int board_size, 
+                                                                    Set<Integer> all_children,
+                                                                    Map<Integer,String> children_paths,
+                                                                    Integer parent) {
         Set<Integer> valid_children = new HashSet<Integer>();
 
-        int parent_row = parent/m_board_size;
-        int parent_col = parent%m_board_size;
+        int parent_row = parent/board_size;
+        int parent_col = parent%board_size;
         int[] delta_row = {-1, 1};
         int[] delta_col = {-1, 1};
         for (int d_row : delta_row) {
@@ -221,8 +221,8 @@ public class Game {
                 // identify all children in current direction
                 Set<Integer> children_in_direction = new HashSet<Integer>();
                 for (Integer child : all_children) {
-                    int child_row = child/m_board_size;
-                    int child_col = child%m_board_size;
+                    int child_row = child/board_size;
+                    int child_col = child%board_size;
                     int child_parent_d_row = (child_row > parent_row) ? 1 : -1;
                     int child_parent_d_col = (child_col > parent_col) ? 1 : -1;
                     if ((d_row == child_parent_d_row) && (d_col == child_parent_d_col)) {
@@ -248,12 +248,13 @@ public class Game {
     }
 
     // compute possible jumps from a given position for a given player
-    private String computePossibleJumpPaths(int pos, boolean isKing, Integer parent, 
-                                            Set<Integer> ancestors, Set<Integer> past_captures, 
-                                            Player player, int opponent_label) {
+    private static String computePossibleJumpPaths(int pos, boolean is_king, Integer parent, 
+                                                   Set<Integer> ancestors, Set<Integer> past_captures, 
+                                                   boolean reflect_pos, int[][] board, int board_size,
+                                                   int player_label, int opponent_label) {
         // set of landing positions one jump away from current position
-        Set<Integer> jump_children = getJumpChildren(pos, isKing, parent, ancestors, past_captures, 
-                                                     player, opponent_label);
+        Set<Integer> jump_children = getJumpChildren(pos, is_king, parent, ancestors, past_captures, board,
+                                                     board_size, reflect_pos, opponent_label);
         // base-case (no children)
         if (jump_children.size() == 0) {
             if (parent == null) {
@@ -268,17 +269,19 @@ public class Game {
             Map<Integer,Integer> children_captures = new HashMap<Integer,Integer>();
             for (Integer child : jump_children) {
                 Set<Integer> childs_copy_of_past_captures = new HashSet<Integer>(past_captures);
-                int capture = computeCapturePos(pos, (int)child, player);
+                int capture = computeCapturePos(pos, (int)child, board, board_size, reflect_pos, 
+                                                player_label, opponent_label);
                 childs_copy_of_past_captures.add(capture);
                 children_captures.put(child, capture);
-                children_paths.put(child, computePossibleJumpPaths((int)child, isKing, 
-                                                                   new Integer(pos), ancestors, 
-                                                                   childs_copy_of_past_captures, player,
-                                                                   opponent_label));
+                children_paths.put(child, computePossibleJumpPaths((int)child, is_king, new Integer(pos), 
+                                                                   ancestors, childs_copy_of_past_captures, 
+                                                                   reflect_pos, board, board_size, 
+                                                                   player_label, opponent_label));
             }
             // remove bogus children in each direction
-            if (isKing) {
-                jump_children = removeBarrenChildrenInEachDirection(jump_children, children_paths, pos);
+            if (is_king) {
+                jump_children = removeBarrenChildrenInEachDirection(board_size, jump_children, 
+                                                                    children_paths, pos);
             }
             // combine children's jump paths into one delimited string and return
             String paths = "";
@@ -297,12 +300,12 @@ public class Game {
     }
 
     // identify all possible non-jump moves from a given position for a given player
-    private String computePossibleMovePaths(int pos, Player player) {
-        boolean isKing = player.pieceAtPos(pos).isKing();        
+    private static String computePossibleMovePaths(int pos, boolean is_king, int[][] board, 
+                                                   int board_size, boolean reflect_pos) {
         boolean node_added;
-        int row = pos/m_board_size;
-        int col = pos%m_board_size;
-        int[] row_diffs = isKing ? new int[]{1, -1} : new int[]{1};
+        int row = pos/board_size;
+        int col = pos%board_size;
+        int[] row_diffs = is_king ? new int[]{1, -1} : new int[]{1};
         int[] col_diffs = {1, -1};  
         int new_row, new_col, dest_pos, dest_board_pos;
 
@@ -318,20 +321,19 @@ public class Game {
                     node_added = false;
                     new_row += r_diff;
                     new_col += c_diff;
-                    if ((new_row >= 0) && (new_row < m_board_size) && (new_col >= 0) && 
-                                                            (new_col < m_board_size)) {       
-                        dest_pos = new_row*m_board_size + new_col;
-                        dest_board_pos = player.m_reflect_pos ? reflectPosition(dest_pos, m_board_size) 
-                                                              : dest_pos;
-                        if (m_board[dest_board_pos/m_board_size]
-                                   [dest_board_pos%m_board_size] == 0) {
+                    if ((new_row >= 0) && (new_row < board_size) && (new_col >= 0) && 
+                                                            (new_col < board_size)) {       
+                        dest_pos = new_row*board_size + new_col;
+                        dest_board_pos = reflect_pos ? reflectPosition(dest_pos, board_size) : dest_pos;
+                        if (board[dest_board_pos/board_size]
+                                   [dest_board_pos%board_size] == 0) {
                             curr_path += dest_pos;
                             paths += curr_path + s_moves_delim;
                             curr_path += s_move_path_delim;
                             node_added = true;
                         }
                     }
-                } while (isKing && node_added);
+                } while (is_king && node_added);
             }
         }
 
@@ -341,40 +343,9 @@ public class Game {
 
     // identify moveable (jump or no jump) pieces for a given player
     private void getMovablePieces(Player player) {
-        Map<Integer,Set<String>> jump_positions = new HashMap<Integer,Set<String>>();
-        Map<Integer,Set<String>> move_positions = new HashMap<Integer,Set<String>>();
-        String jump_paths, move_paths;
-        boolean jump_found = false;
-
-        for (int pos : player.getPiecePositions()) {
-            // check for possible jump from current possition, is found, set jump_found
-            jump_paths = computePossibleJumpPaths(pos, player.pieceAtPos(pos).isKing(), null, 
-                                                  new HashSet<Integer>(), new HashSet<Integer>(), 
-                                                  player, opponentLabel(player, m_players));
-            if ((jump_paths != null) && (!jump_paths.isEmpty())) {
-                jump_positions.put(pos, new HashSet<String>());
-                for (String path : jump_paths.split(s_moves_delim)) {
-                    jump_positions.get(pos).add(path);
-                }
-                jump_found = true;
-            }
-            // if no possible jump found so far, check for possible move from current position
-            if (!jump_found) {
-                move_paths = computePossibleMovePaths(pos, player);
-                if ((move_paths != null) && (!move_paths.isEmpty())) {
-                    move_positions.put(pos, new HashSet<String>());
-                    for (String path : move_paths.split(s_moves_delim)) {
-                        move_positions.get(pos).add(path);
-                    }
-                }
-            }
-        }
-
-        if (jump_found) {
-            m_movable_pieces = jump_positions;
-        } else {
-            m_movable_pieces = move_positions;
-        }
+        m_movable_pieces = getMovablePieces(player, player.m_int_label, opponentLabel(player, m_players),
+                                            m_board, m_board_size, player.m_reflect_pos, 
+                                            player.getPiecePositions());
 
         if (m_movable_pieces.size() == 0) {  // current player can't jump or move: game over
             m_winner_index = (m_curr_player_index + 1) % 2;
@@ -391,6 +362,68 @@ public class Game {
             }
         }
     } 
+
+    public static Map<Integer,Set<String>> getMovablePieces(Player player, int player_label, 
+                                                            int opponent_label, int[][] board, 
+                                                            int board_size, boolean reflect_pos, 
+                                                            Set<Integer> piece_positions) {
+        Map<Integer,Set<String>> jump_positions = new HashMap<Integer,Set<String>>();
+        Map<Integer,Set<String>> move_positions = new HashMap<Integer,Set<String>>();
+        String jump_paths, move_paths;
+        boolean jump_found = false; 
+
+        if (piece_positions == null) {
+            piece_positions = new HashSet<Integer>();
+            for (int i=0; i<board_size; i++) {
+                for (int j=0; j<board_size; j++) {
+                    if ((board[i][j] == player_label) || 
+                        (board[i][j] == player_label * player_label)) {
+                        int pos = i*board_size + j;
+                        pos = reflect_pos ? reflectPosition(pos, board_size) : pos;
+                        piece_positions.add(pos);
+                    }
+                }
+            }
+        }
+
+        for (int pos : piece_positions) {
+            boolean is_king;
+            if (player != null) {
+                is_king = player.pieceAtPos(pos).isKing();
+            } else {
+                int board_pos = reflect_pos ? reflectPosition(pos, board_size) : pos;
+                is_king = (board[board_pos/board_size][board_pos%board_size] == player_label*player_label);
+            }
+
+            // check for possible jump from current possition, is found, set jump_found
+            jump_paths = computePossibleJumpPaths(pos, is_king, null, new HashSet<Integer>(), 
+                                                  new HashSet<Integer>(), reflect_pos, board, board_size, 
+                                                  player_label, opponent_label);
+            if ((jump_paths != null) && (!jump_paths.isEmpty())) {
+                jump_positions.put(pos, new HashSet<String>());
+                for (String path : jump_paths.split(s_moves_delim)) {
+                    jump_positions.get(pos).add(path);
+                }
+                jump_found = true;
+            }
+            // if no possible jump found so far, check for possible move from current position
+            if (!jump_found) {
+                move_paths = computePossibleMovePaths(pos, is_king, board, board_size, reflect_pos);
+                if ((move_paths != null) && (!move_paths.isEmpty())) {
+                    move_positions.put(pos, new HashSet<String>());
+                    for (String path : move_paths.split(s_moves_delim)) {
+                        move_positions.get(pos).add(path);
+                    }
+                }
+            }
+        }
+
+        if (jump_found) {
+            return jump_positions;
+        } else {
+            return move_positions;
+        }
+    }
 
     // handle move of AI player
     private void AIMoveHandler(Player player) {
@@ -463,7 +496,7 @@ public class Game {
     }
 
     // draw the game (board cells and players' pieces)
-    public void draw(Graphics g) {
+    public void draw(Graphics g, boolean has_focus) {
         // check if animation is done
         if (m_game_state == GameState.ANIMATING) {
             animationDoneHandler();
@@ -473,8 +506,8 @@ public class Game {
             cell.draw(g);
         }
         // draw both players (draw all their pieces)
-        m_players[(m_curr_player_index + 1)%2].draw(g);
-        m_players[m_curr_player_index%2].draw(g);
+        m_players[(m_curr_player_index + 1)%2].draw(g, has_focus);
+        m_players[m_curr_player_index%2].draw(g, has_focus);
     }
 
     // process player's choice for the piece to move (the source)

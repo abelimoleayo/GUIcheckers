@@ -10,7 +10,7 @@ public class Piece {
     private final Player m_owner;
     private int m_position, m_capture_index, m_jump_stop_index, m_DeltaX, m_DeltaY, 
                 m_animation_step, m_animation_steps_per_stop;
-    private int[] m_global_coords, m_last_stop_coords;
+    private int[] m_global_coords, m_last_stop_coords, m_prior_coords;
     private int[][] m_stop_coords;
 	private boolean m_to_make_king, m_isKing, m_isMoving, m_isCaptured;
 
@@ -21,6 +21,7 @@ public class Piece {
         m_owner = owner;
         m_position = pos;
         m_global_coords = posToCenterCoords(pos);
+        m_prior_coords = m_global_coords;
         m_isKing = false;
         m_isMoving = false;
         m_isCaptured = false;
@@ -153,9 +154,10 @@ public class Piece {
         return center_coords;       
     }
 
-    public void draw(Graphics g) {
+    public void draw(Graphics g, boolean has_focus) {
         // compute current coordinates of piece
-        int[] coords = computeCenterCoordinate();
+        int[] coords = has_focus ? computeCenterCoordinate() : m_prior_coords;
+        m_prior_coords = coords; 
 
         // draw the piece  (and crown if piece is a king)        
         g.setColor(m_owner.m_piece_color);
