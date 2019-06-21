@@ -21,6 +21,8 @@ public class Checkers extends JPanel {
     private static final Color s_player2_color = Color.BLACK;               // black
     private static final Color s_player1_crown_color = s_player2_color;
     private static final Color s_player2_crown_color = s_player1_color;
+    private static final int s_player1_label = 2;
+    private static final int s_player2_label = 3;
     private static final int s_window_size = 720;
     public static final int s_refresh_period = 30;  // milliseconds between redraws/frames of graphics
     public static final int s_animation_steps = 15; // number of frames per phase of piece jumps/move    
@@ -188,9 +190,10 @@ public class Checkers extends JPanel {
                 // create players
                 String player_name = (player_name_field.getText().length() == 0) ? 
                                                             "Human" : player_name_field.getText();
-                s_players[0] = new HumanPlayer(player_name, 1, false, s_player1_color, 
+                s_players[0] = new HumanPlayer(player_name, s_player1_label, false, s_player1_color, 
                                                s_player1_crown_color);
-                s_players[1] = new AIPlayer("AI", 2, true, s_player2_color, s_player2_crown_color);
+                s_players[1] = new AIPlayer("AI", s_player2_label, true, s_player2_color, 
+                                            s_player2_crown_color);
                 break;
             case MULTI_PLAYER: 
                 JTextField player1_name_field = new JTextField();
@@ -208,14 +211,16 @@ public class Checkers extends JPanel {
                                                             "Player 1" : player1_name_field.getText();
                 String player2_name = (player2_name_field.getText().length() == 0) ? 
                                                             "Player 2" : player2_name_field.getText();
-                s_players[0] = new HumanPlayer(player1_name, 1, false, s_player1_color, 
+                s_players[0] = new HumanPlayer(player1_name, s_player1_label, false, s_player1_color, 
                                                s_player1_crown_color);
-                s_players[1] = new HumanPlayer(player2_name, 2, true, s_player2_color, 
-                                                   s_player2_crown_color);
+                s_players[1] = new HumanPlayer(player2_name, s_player2_label, true, s_player2_color, 
+                                               s_player2_crown_color);
                 break;
             case ZERO_PLAYER:
-                s_players[0] = new AIPlayer("AI P1", 1, false, s_player1_color, s_player1_crown_color);
-                s_players[1] = new AIPlayer("AI P2", 2, true, s_player2_color, s_player2_crown_color);
+                s_players[0] = new AIPlayer("AI P1", s_player1_label, false, s_player1_color, 
+                                            s_player1_crown_color);
+                s_players[1] = new AIPlayer("AI P2", s_player2_label, true, s_player2_color, 
+                                            s_player2_crown_color);
                 break;
         }
     }

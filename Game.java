@@ -343,16 +343,16 @@ public class Game {
 
     // identify moveable (jump or no jump) pieces for a given player
     private void getMovablePieces(Player player) {
-        m_movable_pieces = getMovablePieces(player, player.m_int_label, opponentLabel(player, m_players),
-                                            m_board, m_board_size, player.m_reflect_pos, 
-                                            player.getPiecePositions());
+        int opponent_label = opponentLabel(player, m_players);
+        m_movable_pieces = getMovablePieces(player, player.m_int_label, opponent_label, m_board, 
+                                            m_board_size, player.m_reflect_pos, player.getPiecePositions());
 
         if (m_movable_pieces.size() == 0) {  // current player can't jump or move: game over
             m_winner_index = (m_curr_player_index + 1) % 2;
             m_game_state = GameState.GAME_OVER;
         } else { // current player can jump or move
             if (player.m_type == Player.PlayerType.AI) { // AI player: call handler to process move
-                AIMoveHandler(player);
+                AIMoveHandler(player, opponent_label);
             } else { // human player: highlight moveable cells and set game state
                 for (Integer pos : m_movable_pieces.keySet()) {
                     int global_pos = player.m_reflect_pos ? reflectPosition(pos, m_board_size) : pos;
@@ -426,13 +426,12 @@ public class Game {
     }
 
     // handle move of AI player
-    private void AIMoveHandler(Player player) {
-        int source_pos = ((AIPlayer) player).getMove(m_movable_pieces, m_board, false);
-        int dest_pos = ((AIPlayer) player).getMove(m_movable_pieces, m_board, true);
-        for (String path : m_movable_pieces.get(source_pos)) {
+    private void AIMoveHandler(Player player, int opponent_label) {
+        int[] move = ((AIPlayer) player).getMove(m_movable_pieces, m_board, m_board_size, opponent_label);
+        for (String path : m_movable_pieces.get(move[0])) {
             String[] split_path = path.split(s_move_path_delim);
-            if (dest_pos == Integer.parseInt(split_path[split_path.length - 1])) {
-                updateBoard(player, source_pos + s_moves_delim + path);
+            if (move[1] == Integer.parseInt(split_path[split_path.length - 1])) {
+                updateBoard(player, move[0] + s_moves_delim + path);
                 m_game_state = GameState.ANIMATING;
                 break;
             }
