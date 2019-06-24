@@ -3,7 +3,9 @@ import java.awt.*;
 
 public class AIPlayer extends Player {
 
-    private final int m_minimax_depth = 3;
+    private Scanner in = new Scanner(System.in);
+
+    private final int m_minimax_depth = 8;
 
     // TODO: add class variable to store difficulty level
 
@@ -29,7 +31,7 @@ public class AIPlayer extends Player {
         int beta = Integer.MAX_VALUE;
 
         for (Integer pos : moveable_pieces_pos.keySet()) {
-            for (String move : moveable_pieces_pos.get(pos)) {    
+            for (String move : moveable_pieces_pos.get(pos)) { 
                 int[][] next_game_board = getBoardAfterMove(deepCopy(game_board, board_size), board_size,
                                                             pos, move, this.m_reflect_pos, this.m_int_label);
                 int move_value = miniMax(next_game_board, board_size, m_minimax_depth, alpha, beta, false, 
@@ -48,6 +50,30 @@ public class AIPlayer extends Player {
         return best_move;
 
     }
+
+    // EASY: Pick randomly
+    private int[] easyAI(Map<Integer,Set<String>> moveable_pieces_pos) {
+        int[] choice_move = new int[2];
+        int rand_index = UtilityFuncs.r.nextInt(moveable_pieces_pos.keySet().size());
+        int idx = 0;
+        for (Integer pos : moveable_pieces_pos.keySet()) {
+            if (idx++ == rand_index) {
+                choice_move[0] = pos;
+                int rand_index_2 = UtilityFuncs.r.nextInt(moveable_pieces_pos.get(pos).size());
+                int idx2 = 0;
+                for (String move : moveable_pieces_pos.get(pos)) {
+                    if (idx2++ == rand_index_2) {
+                        String[] move_path = move.split(Game.s_move_path_delim);
+                        choice_move[1] = Integer.parseInt(move_path[move_path.length - 1]);
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        return choice_move;
+    } 
 
     private int[][] getBoardAfterMove(int[][] board, int board_size, int source_pos, String move, 
                                       boolean reflect_pos, int player_label) {
@@ -92,21 +118,27 @@ public class AIPlayer extends Player {
     private int miniMax(int[][] board, int board_size, int depth, int alpha, int beta, boolean maximizing,
                         int player_label, int opponent_label, boolean reflect_pos) {
         if (depth == 0) {
-            return evalBoard(board, board_size, player_label, opponent_label, reflect_pos);
+            return evalBoard(board, board_size, opponent_label);
         }
-        Map<Integer,Set<String>> moveable_pieces = Game.getMovablePieces(null, this.m_int_label, 
-                                                                         opponent_label, board, board_size, 
-                                                                         this.m_reflect_pos, null);
+        Map<Integer,Set<String>> moveable_pieces = Game.getMovablePieces(null, player_label, opponent_label,
+                                                                         board, board_size, reflect_pos, 
+                                                                         null);
         if (moveable_pieces.size() == 0) {
-            return evalBoard(board, board_size, player_label, opponent_label, reflect_pos);
+            return evalBoard(board, board_size, opponent_label);
         }
 
+        boolean to_break = false;
         if (maximizing) {
             int max_move_value = Integer.MIN_VALUE;
             for (Integer pos : moveable_pieces.keySet()) {
                 for (String move : moveable_pieces.get(pos)) {
+                    //printBoard(board, board_size);
+                    //System.out.println(maximizing + ", pos: " + pos + ", move: " + move);
                     int[][] next_game_board = getBoardAfterMove(deepCopy(board, board_size), board_size, 
                                                                 pos, move, reflect_pos, player_label);
+                    //printBoard(next_game_board, board_size);
+                    //System.out.println('\n');
+                    //in.nextLine();
                     int move_value = miniMax(next_game_board, board_size, depth-1, alpha, beta, !maximizing, 
                                              opponent_label, player_label, !reflect_pos);
                     if (move_value > max_move_value) {
@@ -116,17 +148,24 @@ public class AIPlayer extends Player {
                         alpha = move_value;
                     }
                     if (beta <= alpha) {
+                        to_break = true;
                         break;
                     }
                 }
+                if (to_break) break;
             }
             return max_move_value;
         } else {
             int min_move_value = Integer.MAX_VALUE;
             for (Integer pos : moveable_pieces.keySet()) {
                 for (String move : moveable_pieces.get(pos)) {
+                    //printBoard(board, board_size);
+                    //System.out.println(maximizing + ", pos: " + pos + ", move: " + move);
                     int[][] next_game_board = getBoardAfterMove(deepCopy(board, board_size), board_size, 
                                                                 pos, move, reflect_pos, player_label);
+                    //printBoard(next_game_board, board_size);
+                    //System.out.println('\n');
+                    //in.nextLine();
                     int move_value = miniMax(next_game_board, board_size, depth-1, alpha, beta, !maximizing, 
                                              opponent_label, player_label, !reflect_pos);
                     if (move_value < min_move_value) {
@@ -136,16 +175,18 @@ public class AIPlayer extends Player {
                         beta = move_value;
                     }
                     if (beta <= alpha) {
+                        to_break = true;
                         break;
                     }
                 }
+                if (to_break) break;
             }
             return min_move_value;
         }
     }
 
-    private int evalBoard(int[][] game_board, int board_size, int player_label, int opponent_label, 
-                          boolean reflect_pos) {
+    private int evalBoard(int[][] game_board, int board_size, int opponent_label) {
+        //printBoard(game_board, board_size);
         int value = 0;
         int backward_piece_value = 5;
         int forward_piece_value = 7;
@@ -154,20 +195,20 @@ public class AIPlayer extends Player {
         for (int row=0; row<board_size; row++) {
             for (int col=0; col<board_size; col++) {
                 if ((row + col) % 2 == 0) {
-                    if (game_board[row][col] == player_label*player_label) {
+                    if (game_board[row][col] == m_int_label*m_int_label) {
                         value += king_value;
                     } else if (game_board[row][col] == opponent_label*opponent_label) {
                         value -= king_value;
-                    } else if (game_board[row][col] == player_label) {
-                        if ((reflect_pos && (row < board_size/2)) ||
-                            (!reflect_pos && (row > board_size/2))) {
+                    } else if (game_board[row][col] == m_int_label) {
+                        if ((m_reflect_pos && (row < board_size/2)) ||
+                            (!m_reflect_pos && (row >= board_size/2))) {
                             value += forward_piece_value;
                         } else {
                             value += backward_piece_value;
                         }
                     } else if (game_board[row][col] == opponent_label) {
-                        if ((reflect_pos && (row < board_size/2)) ||
-                            (!reflect_pos && (row > board_size/2))) {
+                        if ((m_reflect_pos && (row < board_size/2)) ||
+                            (!m_reflect_pos && (row >= board_size/2))) {
                             value -= backward_piece_value;
                         } else {
                             value -= forward_piece_value;
@@ -176,16 +217,18 @@ public class AIPlayer extends Player {
                 }
             }
         }
-
-        // // print-board
-        // for (int i=board_size-1; i>=0; i--) {
-        //     for (int j=0; j<board_size; j++) {
-        //         System.out.print(game_board[i][j] + "\t");
-        //     }
-        //     System.out.println(" ");
-        // }
-        // System.out.println(player_label + ": " + value);
-
+        // System.out.println(player_label + ", value: " + value);
+        // in.nextLine();
         return value;
+    }
+
+    private void printBoard(int[][] game_board, int board_size) {
+        // print-board
+        for (int i=board_size-1; i>=0; i--) {
+            for (int j=0; j<board_size; j++) {
+                System.out.print(game_board[i][j] + "\t");
+            }
+            System.out.println(" ");
+        }
     }
 }

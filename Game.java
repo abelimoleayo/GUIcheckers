@@ -14,7 +14,7 @@ public class Game {
     // instance variables
     private Player[] m_players; 
     private int m_board_size, m_pieces_per_player, m_curr_player_index, m_winner_index, m_player_source, 
-                m_player_destination;
+                m_player_destination, m_moves_without_capture, m_max_moves_without_capture;
     private int[][] m_board;
     private String m_selected_move;
     private GameState m_game_state;
@@ -170,10 +170,13 @@ public class Game {
                             child_row = capture_row + r_diff;
                             child_col = capture_col + c_diff;
                             child_pos = child_row*board_size + child_col;
-                            child_board_pos = reflect_pos ? reflectPosition(child_pos, board_size) : child_pos;
+                            child_board_pos = reflect_pos ? reflectPosition(child_pos, board_size) 
+                                                          : child_pos;
                             // check if landing cell just after capture piece is free
-                            if ((board[capture_board_pos/board_size]
-                                        [capture_board_pos%board_size] == opponent_label) && 
+                            if (((board[capture_board_pos/board_size]
+                                        [capture_board_pos%board_size] == opponent_label) || 
+                                 (board[capture_board_pos/board_size]
+                                        [capture_board_pos%board_size] == opponent_label*opponent_label)) && 
                                     ((board[child_board_pos/board_size]
                                              [child_board_pos%board_size] == 0) || 
                                       ancestors.contains(child_pos))) {
