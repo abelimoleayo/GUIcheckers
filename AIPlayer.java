@@ -139,7 +139,7 @@ public class AIPlayer extends Player {
                     //printBoard(next_game_board, board_size);
                     //System.out.println('\n');
                     //in.nextLine();
-                    int move_value = miniMax(next_game_board, board_size, depth-1, alpha, beta, !maximizing, 
+                    int move_value = miniMax(next_game_board, board_size, depth-1, alpha, beta, !maximizing,
                                              opponent_label, player_label, !reflect_pos);
                     if (move_value > max_move_value) {
                         max_move_value = move_value;
@@ -166,7 +166,7 @@ public class AIPlayer extends Player {
                     //printBoard(next_game_board, board_size);
                     //System.out.println('\n');
                     //in.nextLine();
-                    int move_value = miniMax(next_game_board, board_size, depth-1, alpha, beta, !maximizing, 
+                    int move_value = miniMax(next_game_board, board_size, depth-1, alpha, beta, !maximizing,
                                              opponent_label, player_label, !reflect_pos);
                     if (move_value < min_move_value) {
                         min_move_value = move_value;
@@ -185,6 +185,12 @@ public class AIPlayer extends Player {
         }
     }
 
+    /*
+        TODO: 
+            - Prompt for draw if no wins after a while
+            - Fix screenshot
+            - New gamemode prompt UI to include difficulty level
+    */
     private int evalBoard(int[][] game_board, int board_size, int opponent_label) {
         //printBoard(game_board, board_size);
         int value = 0;

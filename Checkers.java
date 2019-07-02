@@ -87,7 +87,9 @@ public class Checkers extends JPanel {
         // if game mode has been selected, draw, otherwise, prompt for game mode and settings
         if (s_game_mode_selected) {
             if (s_game.getGameState() == Game.GameState.GAME_OVER) {
-                updateScoresAndPrintOutcome();
+                updateScoresAndPrintOutcome(false);
+            } else if (s_game.getGameState() == Game.GameState.ON_HOLD) {
+                return;
             }
             g.setColor(s_background_color);
             g.fillRect(0, 0, s_window_size, s_window_size);
@@ -225,6 +227,20 @@ public class Checkers extends JPanel {
         }
     }
 
+    public static void promptForDraw() {
+        s_waiting = true;
+
+        String message = "End game as a draw?";
+        Object[] options = {"Yes", "No"};
+        int choice = JOptionPane.showOptionDialog(s_window, message, "Tie Game?", JOptionPane.YES_NO_OPTION,
+                                                JOptionPane.INFORMATION_MESSAGE, null, options, options[1]);
+        if (choice == JOptionPane.YES_OPTION) {
+            updateScoresAndPrintOutcome(true);
+        } else {
+            s_waiting = false;
+        }
+    }
+
     // print name of winner of series of games and the final score
     private static void printOutro() {
         String outro = "Game over!\n\n";
@@ -242,13 +258,18 @@ public class Checkers extends JPanel {
     }
 
     // print outcome of single game and prompt for new game
-    private static void updateScoresAndPrintOutcome() {
+    private static void updateScoresAndPrintOutcome(boolean tied_game) {
         s_waiting = true;
 
         // print outcome of recently completed game
-        s_curr_winner_index = s_game.getWinnerIndex();
-        s_games_won[s_curr_winner_index] += 1;
-        String message = s_players[s_curr_winner_index].getName() + " won game #" + s_game_index + "\n\n";
+        String message;
+        if (tied_game) {
+            message = "Game #" + s_game_index + " ended in a tie\n\n";
+        } else {
+            s_curr_winner_index = s_game.getWinnerIndex();
+            s_games_won[s_curr_winner_index] += 1;
+            message = s_players[s_curr_winner_index].getName() + " won game #" + s_game_index + "\n\n";
+        }
         message += "Current Score: " + s_players[0].getName() + " [" + s_games_won[0]
                                  + "] vs. [" + s_games_won[1] + "] " + s_players[1].getName() + "\n\n";
 

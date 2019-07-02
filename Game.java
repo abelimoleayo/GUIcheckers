@@ -3,19 +3,21 @@ import java.awt.Graphics;
 
 public class Game {
     public static enum GameState {
-        WAITING_FOR_SOURCE, WAITING_FOR_DESTINATION, ANIMATING, GAME_OVER;
+        WAITING_FOR_SOURCE, WAITING_FOR_DESTINATION, ANIMATING, ON_HOLD, GAME_OVER;
     }
 
     // static variables
     public static final String s_capture_delim = "=";
     public static final String s_moves_delim = ":";
     public static final String s_move_path_delim = "-";
+    private static final int m_max_kings_moves_without_capture = 10;
 
     // instance variables
     private Player[] m_players; 
     private int m_board_size, m_pieces_per_player, m_curr_player_index, m_winner_index, m_player_source, 
-                m_player_destination, m_moves_without_capture, m_max_moves_without_capture;
+                m_player_destination, m_kings_moves_without_capture;
     private int[][] m_board;
+    private boolean m_capture_occured;
     private String m_selected_move;
     private GameState m_game_state;
     private BoardCell m_invalid_cell;
@@ -443,7 +445,7 @@ public class Game {
 
     // update game board after a player's move
     private void updateBoard(Player player, String move) {
-        boolean is_jump = move.contains(s_capture_delim);
+        m_capture_occured = move.contains(s_capture_delim);
         String[] move_sections = move.split(s_moves_delim);
         int source_pos = Integer.parseInt(move_sections[0]);
         String[] move_path = move_sections[1].split(s_move_path_delim);
@@ -460,7 +462,7 @@ public class Game {
 
         // remove captured pieces and update board if move was a jump
         List<Integer> stops = new ArrayList<Integer>();
-        if (is_jump) {
+        if (m_capture_occured) {
             int capture_pos, capture_board_pos, capture_pos_opponent_POV;
             for (int i=0; i<move_path.length-1; i++) {
                 String[] captor_capture = move_path[i].split(s_capture_delim);
@@ -707,6 +709,7 @@ public class Game {
                 cell.setCellState(BoardCell.CellState.DEFAULT, m_players[m_curr_player_index % 2]);
             }
             m_animation_cells = new HashSet<BoardCell>();
+            checkForKingDraw();
             m_curr_player_index++;
             getMovablePieces(m_players[m_curr_player_index % 2]);
         }
@@ -724,6 +727,23 @@ public class Game {
             case WAITING_FOR_DESTINATION:
                 waitingForDestinationHandler(pos, global_pos, curr_player);
                 break;
+        }
+    }
+
+    private void checkForKingDraw() {
+        if (m_capture_occured) {
+            m_kings_moves_without_capture = 0;
+            return;
+        }
+        if (m_players[0].hasKing() && m_players[1].hasKing()) {
+            m_kings_moves_without_capture++;
+            if (m_kings_moves_without_capture >= m_max_kings_moves_without_capture) {
+                GameState old_game_state = m_game_state;
+                m_game_state = GameState.ON_HOLD;
+                Checkers.promptForDraw();
+                m_game_state = old_game_state;
+                m_kings_moves_without_capture = 0;  // reset count after prompt for draw
+            }
         }
     }
 }

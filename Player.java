@@ -8,11 +8,11 @@ public abstract class Player {
     }
     
     // POSITIONS ARE IN PLAYER POV!!!
-    private String m_name;               // player name
-    private int m_num_pieces;            // total number of player pieces
+    private String m_name;                  // player name
+    private int m_num_pieces, m_king_count; // number of player pieces, number of kings
     private Set<Piece> m_pieces, m_animating_captured_pieces;  // set of pieces
     public final int m_int_label;        // integer label for player in internal game board representation
-    public final boolean m_reflect_pos;  // if piece positions are opposite game POV and need to be reflected     
+    public final boolean m_reflect_pos;  // if piece positions are opposite game POV and need to be reflected
     public final Color m_piece_color, m_crown_color; // color of player piece and crown
     public final PlayerType m_type;      // player type
 
@@ -22,7 +22,6 @@ public abstract class Player {
         m_name = name;
         m_int_label = board_label;
         m_reflect_pos = reflect;
-        m_num_pieces = 0;
         m_piece_color = piece_color;
         m_crown_color = crown_color;
         m_pieces = new HashSet<Piece>();
@@ -43,7 +42,16 @@ public abstract class Player {
         m_pieces.remove(piece);
         m_animating_captured_pieces.add(piece);
         piece.isCaptured(capture_animation_index);
+        if (piece.isKing()) {
+            m_king_count--;
+        }
         m_num_pieces--;
+    }
+
+    public void updateKingCount(Piece piece) {
+        if (m_pieces.contains(piece)) {
+            m_king_count++;
+        }
     }
 
     // get array of positions of all pieces of the player
@@ -53,6 +61,11 @@ public abstract class Player {
             positions.add(piece.getPos());
         }
         return positions;
+    }
+
+    // get if player has a king piece
+    public boolean hasKing() {
+        return (m_king_count > 0);
     }
 
     // get the piece at a given position
@@ -68,6 +81,7 @@ public abstract class Player {
     // clear all player pieces
     public void clearPieces() {
         m_num_pieces = 0;
+        m_king_count = 0;
         m_pieces = new HashSet<Piece>();
         m_animating_captured_pieces = new HashSet<Piece>();
     }

@@ -61,6 +61,9 @@ public class Piece {
 
     public void makeKing() {
         m_to_make_king = true;
+        if (!m_isKing) {
+            m_owner.updateKingCount(this);
+        }
     }
 
 	public int getPos() {	
