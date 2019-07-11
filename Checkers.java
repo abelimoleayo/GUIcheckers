@@ -296,5 +296,6 @@ public class Checkers extends JPanel {
         s_window.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         s_window.setResizable(false);
         s_window.setVisible(true);
+        UIManager.put("Button.defaultButtonFollowsFocus", Boolean.TRUE);
     }
 }
