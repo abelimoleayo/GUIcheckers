@@ -188,7 +188,7 @@ public class AIPlayer extends Player {
     /*
         TODO: 
             - Prompt for draw if no wins after a while
-            - Fix screenshot
+            - Fix screenshot (see TDL.txt)
             - New gamemode prompt UI to include difficulty level
     */
     private int evalBoard(int[][] game_board, int board_size, int opponent_label) {
@@ -228,13 +228,13 @@ public class AIPlayer extends Player {
         return value;
     }
 
-    private void printBoard(int[][] game_board, int board_size) {
-        // print-board
-        for (int i=board_size-1; i>=0; i--) {
-            for (int j=0; j<board_size; j++) {
-                System.out.print(game_board[i][j] + "\t");
-            }
-            System.out.println(" ");
-        }
-    }
+    // private void printBoard(int[][] game_board, int board_size) {
+    //     // print-board
+    //     for (int i=board_size-1; i>=0; i--) {
+    //         for (int j=0; j<board_size; j++) {
+    //             System.out.print(game_board[i][j] + "\t");
+    //         }
+    //         System.out.println(" ");
+    //     }
+    // }
 }

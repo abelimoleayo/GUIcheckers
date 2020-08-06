@@ -10,7 +10,7 @@ public class Game {
     public static final String s_capture_delim = "=";
     public static final String s_moves_delim = ":";
     public static final String s_move_path_delim = "-";
-    private static final int m_max_kings_moves_without_capture = 10;
+    private static final int m_max_kings_moves_without_capture = 20;
 
     // instance variables
     private Player[] m_players; 
@@ -278,7 +278,7 @@ public class Game {
                                                 player_label, opponent_label);
                 childs_copy_of_past_captures.add(capture);
                 children_captures.put(child, capture);
-                children_paths.put(child, computePossibleJumpPaths((int)child, is_king, new Integer(pos), 
+                children_paths.put(child, computePossibleJumpPaths((int)child, is_king, Integer.valueOf(pos), 
                                                                    ancestors, childs_copy_of_past_captures, 
                                                                    reflect_pos, board, board_size, 
                                                                    player_label, opponent_label));
