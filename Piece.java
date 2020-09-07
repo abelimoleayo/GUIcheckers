@@ -15,17 +15,17 @@ public class Piece {
 	private boolean m_to_make_king, m_isKing, m_isMoving, m_isCaptured;
 
 	public Piece(int pos, Player owner) {
-        m_ID = s_ID_tracker++;
-        m_piece_width = Checkers.getBoardPieceWidth();
-        m_cell_width = Checkers.getBoardCellWidth();
-        m_owner = owner;
-        m_position = pos;
-        m_global_coords = posToCenterCoords(pos);
-        m_prior_coords = m_global_coords;
-        m_isKing = false;
-        m_isMoving = false;
-        m_isCaptured = false;
-        m_animation_steps_per_stop = Checkers.s_animation_steps;
+	    m_ID = s_ID_tracker++;
+	    m_piece_width = Checkers.getBoardPieceWidth();
+	    m_cell_width = Checkers.getBoardCellWidth();
+	    m_owner = owner;
+	    m_position = pos;
+	    m_global_coords = posToCenterCoords(pos);
+	    m_prior_coords = m_global_coords;
+	    m_isKing = false;
+	    m_isMoving = false;
+	    m_isCaptured = false;
+	    m_animation_steps_per_stop = Checkers.s_animation_steps;
 	}
 
     // override comparison method to allow for checking if piece is contained in a set/collection
